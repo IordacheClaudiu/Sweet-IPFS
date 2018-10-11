@@ -13,39 +13,37 @@ import org.ligi.tracedroid.sending.TraceDroidEmailSender
 
 class MainActivity : AppCompatActivity() {
 
-    fun redirect() = Intent(this, ConsoleActivity::class.java).run{
+    fun redirect() = Intent(this, ConsoleActivity::class.java).run {
         flags += FLAG_ACTIVITY_NO_ANIMATION
         startActivity(this)
     }
 
-    fun show() = listOf(text, startbtn).forEach{(it as View).visibility = VISIBLE }
+    fun show() = listOf(text, startbtn).forEach { (it as View).visibility = VISIBLE }
 
-    var refresh:() -> Unit = {}
+    var refresh: () -> Unit = {}
 
-    override fun onResume() = super.onResume().also{refresh()}
+    override fun onResume() = super.onResume().also { refresh() }
 
     override fun onCreate(state: Bundle?) = super.onCreate(state).also {
-
         setContentView(R.layout.activity_main)
 
-        TraceDroidEmailSender.sendStackTraces("hazae41@gmail.com", this)
+        TraceDroidEmailSender.sendStackTraces("ciordache92@gmail.com", this)
 
-        fun error(msg: String) = text.apply{
+        fun error(msg: String) = text.apply {
             text = msg
             visibility = VISIBLE
         }
-
         chain(
-            permission@{
-                RxPermissions(this)
-                    .request(INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE)
-                    .subscribe { granted -> if(granted) it()}
-            },
-            check@{ipfsd.check(it, ::error)},
-            refresh@{
-                startbtn.setOnClickListener{chain(ipfsd::init, ipfsd::start, {redirect()})}
-                refresh = {check(::redirect, ::show)}.also{it()}
-            }
+                permission@{
+                    RxPermissions(this)
+                            .request(INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE)
+                            .subscribe { granted -> if (granted) it() }
+                },
+                check@{ ipfsDaemon.check(it, ::error) },
+                refresh@{
+                    startbtn.setOnClickListener { chain(ipfsDaemon::init, ipfsDaemon::start, { redirect() }) }
+                    refresh = { check(::redirect, ::show) }.also { it() }
+                }
         )
     }
 

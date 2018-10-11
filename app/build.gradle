@@ -20,17 +20,17 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
-    applicationVariants.all { variant ->
-        variant.outputs.all {
-            outputFileName = "$archivesBaseName-${variant.name}.apk"
-        }
-        variant.assemble.doLast { assemble ->
-            copy {
-                from variant.outputs*.outputFile
-                into file("/apk")
-            }
-        }
-    }
+//    applicationVariants.all { variant ->
+//        variant.outputs.all {
+//            outputFileName = "$archivesBaseName-${variant.name}.apk"
+//        }
+//        variant.assemble.doLast { assemble ->
+//            copy {
+//                from variant.outputs*.outputFile
+//                into file("/apk")
+//            }
+//        }
+//    }
 
     sourceSets {
         main {

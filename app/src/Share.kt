@@ -2,7 +2,6 @@ package fr.rhaz.ipfs.sweet
 
 import android.app.AlertDialog
 import android.content.Intent
-import android.content.Intent.ACTION_SEND
 import android.content.Intent.EXTRA_TEXT
 import android.net.Uri
 import android.os.Bundle
@@ -18,7 +17,7 @@ import java.io.InputStream
 class ShareActivity : AppCompatActivity() {
 
     override fun onCreate(state: Bundle?) = super.onCreate(state).also {
-        if(!intent.hasExtra("hash")) check()
+        if (!intent.hasExtra("hash")) check()
         else Multihash.fromBase58(intent.getStringExtra("hash")).show()
         /*else AlertDialog.Builder(this).apply {
             setTitle(getString(R.string.share_action_not_supported))
@@ -34,10 +33,10 @@ class ShareActivity : AppCompatActivity() {
     fun check() = check(::process) {
         AlertDialog.Builder(this).apply {
             setTitle(getString(R.string.daemon_not_running))
-            setPositiveButton(getString(R.string.start)){ d, _ ->
-                chain(ipfsd::init, ipfsd::start, {d.dismiss(); process()})
+            setPositiveButton(getString(R.string.start)) { d, _ ->
+                chain(ipfsDaemon::init, ipfsDaemon::start, { d.dismiss(); process() })
             }
-            setNeutralButton(getString(R.string.close)){ _, _ -> finish()}
+            setNeutralButton(getString(R.string.close)) { _, _ -> finish() }
         }.show()
     }
 
@@ -45,41 +44,49 @@ class ShareActivity : AppCompatActivity() {
     // if it could not: say that it could not with a button to close the activity
     fun process() = intent.tempFile?.askWrap() ?: AlertDialog.Builder(this).apply {
         setTitle(getString(R.string.share_cannot_open))
-        setNeutralButton(getString(R.string.close)){ _, _ -> finish()}
-    }.show().let{Unit}
+        setNeutralButton(getString(R.string.close)) { _, _ -> finish() }
+    }.show().let { Unit }
 
     // Create file from resource type
-    val Intent.tempFile get() = when(type){
-        "text/plain" -> text?.tempFile
-        else -> data?.apply{title = name}?.tempFile
-    }
+    val Intent.tempFile
+        get() = when (type) {
+            "text/plain" -> text?.tempFile
+            else -> data?.apply { title = name }?.tempFile
+        }
 
     // Get text resource
-    val Intent.text get() = getStringExtra(EXTRA_TEXT)?.also{title = it}
+    val Intent.text get() = getStringExtra(EXTRA_TEXT)?.also { title = it }
 
     // Retrieve uri data
     val Uri.inputStream get() = contentResolver.openInputStream(this)
 
     // Retrieve uri name
-    val Uri.name: String get() = contentResolver.query(this, null, null, null, null).run {
-        val index = getColumnIndex(OpenableColumns.DISPLAY_NAME)
-        moveToFirst()
-        getString(index).also{close()}
-    }
+    val Uri.name: String
+        get() = contentResolver.query(this, null, null, null, null).run {
+            val index = getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            moveToFirst()
+            getString(index).also { close() }
+        }
 
     fun InputStream.copy(file: File) = file.outputStream().let {
-        try {copyTo(it); file}
-        catch(ex: Exception){null}
-        finally {close(); it.close()}
+        try {
+            copyTo(it); file
+        } catch (ex: Exception) {
+            null
+        } finally {
+            close(); it.close()
+        }
     }
 
     // Create temp file from uri
-    val Uri.tempFile: File? get() =
-        inputStream.copy(File.createTempFile("temp", name, cacheDir))
+    val Uri.tempFile: File?
+        get() =
+            inputStream.copy(File.createTempFile("temp", name, cacheDir))
 
     // Create temp file from text
-    val String.tempFile: File? get() =
-        byteInputStream().copy(File.createTempFile("temp", ".txt", cacheDir))
+    val String.tempFile: File?
+        get() =
+            byteInputStream().copy(File.createTempFile("temp", ".txt", cacheDir))
 
     // Ask if we wrap the file in a dir or not
     // try to add the file
@@ -88,34 +95,41 @@ class ShareActivity : AppCompatActivity() {
     fun File.askWrap() = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_wrap))
         val wrapper = FileWrapper(this@askWrap)
-        setPositiveButton(getString(R.string.yes)){ _, _ ->
+        setPositiveButton(getString(R.string.yes)) { _, _ ->
             add {
                 var i: List<MerkleNode>? = null
-                while(i == null) try {i = ipfs.add(wrapper, true)}
-                catch(ex: NullPointerException){}
+                while (i == null) try {
+                    i = ipfs.add(wrapper, true)
+                } catch (ex: NullPointerException) {
+                }
                 i.last().hash
             }
         }
-        setNegativeButton(getString(R.string.no)){ _, _ ->
-            add{
+        setNegativeButton(getString(R.string.no)) { _, _ ->
+            add {
                 var i: List<MerkleNode>? = null
-                while(i == null) try {i = ipfs.add(wrapper, false)}
-                catch(ex: NullPointerException){}
+                while (i == null) try {
+                    i = ipfs.add(wrapper, false)
+                } catch (ex: NullPointerException) {
+                }
                 i!!.last().hash
             }
         }
-    }.show().let{Unit}
+    }.show().let { Unit }
 
     fun error(ex: Exception? = null) = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_error))
-        setPositiveButton(getString(R.string.report)){ d, _ -> finish()}
-        setNegativeButton(getString(R.string.close)){ _, _ -> finish()}
-    }.show().let{Unit}
+        setPositiveButton(getString(R.string.report)) { d, _ -> finish() }
+        setNegativeButton(getString(R.string.close)) { _, _ -> finish() }
+    }.show().let { Unit }
 
     // Show hash after adding it
     fun add(action: () -> Multihash?) = Thread {
-        try { action()?.show() ?: error()}
-        catch(ex: Exception) {error(ex)}
+        try {
+            action()?.show() ?: error()
+        } catch (ex: Exception) {
+            error(ex)
+        }
     }.start()
 
     fun Multihash.show() = runOnUiThread {
@@ -128,7 +142,7 @@ class ShareActivity : AppCompatActivity() {
             text = "$hash"
             var index = 0
             val switch = {
-                text = when(++index%4){
+                text = when (++index % 4) {
                     1 -> url
                     2 -> "ipfs://$hash"
                     3 -> "/ipfs/$hash"

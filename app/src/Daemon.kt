@@ -14,26 +14,32 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.rhaz.ipfs.sweet.R.drawable.notificon
+import java.io.File
 import java.io.FileReader
+import com.google.gson.Gson
+import java.io.IOException
+import java.net.InetAddress
 
-val Context.ipfsd get() = Daemon(this)
+
+val Context.ipfsDaemon get() = Daemon(this)
 
 class Daemon(val ctx: Context) {
 
-    val store by lazy{ctx.getExternalFilesDir(null)["ipfs"]}
-    val bin by lazy{ctx.filesDir["ipfsbin"]}
-    val version by lazy{ctx.getExternalFilesDir(null)["version"]}
+    private val store by lazy { ctx.getExternalFilesDir(null)["ipfs"] }
+    private val bin by lazy { ctx.filesDir["ipfsbin"] }
+    private val version by lazy { ctx.getExternalFilesDir(null)["version"] }
+    private val swarmFile by lazy { store[swarmKey] }
+    private val swarmKey by lazy { "swarm.key" }
 
-    val config by lazy{ JsonParser().parse(FileReader(store["config"])).asJsonObject}
+    val config by lazy { JsonParser().parse(FileReader(store["config"])).asJsonObject }
 
-    fun config(consumer: (JsonObject) -> Unit){
-        consumer(config)
+    fun config(consumer: (JsonObject) -> Unit) {
         GsonBuilder().setPrettyPrinting().create().toJson(config).toByteArray()
-            .also { store["config"].writeBytes(it) }
+                .also { store["config"].writeBytes(it) }
     }
 
-    fun check(callback: () -> Unit = {}, err: (String) -> Unit = {}){
-        if(bin.exists()) callback()
+    fun check(callback: () -> Unit = {}, err: (String) -> Unit = {}) {
+        if (bin.exists()) callback()
         else install(callback, err)
     }
 
@@ -51,11 +57,12 @@ class Daemon(val ctx: Context) {
             setCancelable(false)
             show()
         }
-
+        // install ipfs
         act.assets.open(type).apply {
             bin.outputStream().also {
-                try {copyTo(it)}
-                finally {
+                try {
+                    copyTo(it)
+                } finally {
                     it.close()
                     close()
                 }
@@ -70,11 +77,11 @@ class Daemon(val ctx: Context) {
     }
 
     fun run(cmd: String) = Runtime.getRuntime().exec(
-        "${bin.absolutePath} $cmd",
-        arrayOf("IPFS_PATH=${store.absolutePath}")
+            "${bin.absolutePath} $cmd",
+            arrayOf("IPFS_PATH=${store.absolutePath}")
     )
 
-    fun init(callback: () -> Unit = {}){
+    fun init(callback: () -> Unit = {}) {
         val act = ctx as? Activity ?: return
 
         val progress = ProgressDialog(ctx).apply {
@@ -83,7 +90,7 @@ class Daemon(val ctx: Context) {
             show()
         }
 
-        Thread{
+        Thread {
             val exec = run("init")
             Thread {
                 exec.inputStream.bufferedReader().forEachLine { println(it) }
@@ -92,16 +99,40 @@ class Daemon(val ctx: Context) {
                 exec.errorStream.bufferedReader().forEachLine { println(it) }
             }.start()
             exec.waitFor()
-            config{
-                it.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
-                    remove("LowWater")
-                    addProperty("LowWater", 20)
-                    remove("HighWater")
-                    addProperty("HighWater", 40)
-                    remove("GracePeriod")
-                    addProperty("GracePeriod", "120s")
+
+            // copy swarm.key
+            if (!swarmFile.exists()) {
+                swarmFile.createNewFile()
+                act.assets.open(swarmKey).apply {
+                    swarmFile.outputStream().also {
+                        try {
+                            copyTo(it)
+                        } finally {
+                            it.close()
+                            close()
+                        }
+                    }
                 }
             }
+
+            // change config file
+
+            config.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
+                remove("LowWater")
+                addProperty("LowWater", 20)
+                remove("HighWater")
+                addProperty("HighWater", 40)
+                remove("GracePeriod")
+                addProperty("GracePeriod", "120s")
+            }
+
+            config.remove("Bootstrap")
+            val array = JsonArray(1)
+            array.add("/ip4/82.137.20.248/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
+            config.add("Bootstrap", array)
+
+            config { config }
+
             progress.dismiss()
             act.runOnUiThread(callback)
         }.start()
@@ -119,13 +150,14 @@ class Daemon(val ctx: Context) {
             show()
         }
 
-        Thread{
+        Thread {
 
-            while(true.also { Thread.sleep(1000) }) try {
+            while (true.also { Thread.sleep(1000) }) try {
                 version.writeText(
-                    ipfs.version() ?: continue
+                        ipfs.version() ?: continue
                 ); break
-            } catch(ex: Exception){}
+            } catch (ex: Exception) {
+            }
 
             act.runOnUiThread {
                 progress.dismiss()
@@ -136,13 +168,13 @@ class Daemon(val ctx: Context) {
 
 }
 
-class DaemonService: Service() {
+class DaemonService : Service() {
 
     override fun onBind(i: Intent) = null
 
     lateinit var daemon: Process
 
-    override fun onCreate() = super.onCreate().also{
+    override fun onCreate() = super.onCreate().also {
 
         val exit = Intent(this, DaemonService::class.java).apply {
             action = "STOP"
@@ -155,7 +187,7 @@ class DaemonService: Service() {
             NotificationChannel("sweetipfs", "Sweet IPFS", IMPORTANCE_MIN).apply {
                 description = "Sweet IPFS"
                 getSystemService(NotificationManager::class.java)
-                    .createNotificationChannel(this)
+                        .createNotificationChannel(this)
             }
 
         NotificationCompat.Builder(this, "sweetipfs").run {
@@ -170,24 +202,25 @@ class DaemonService: Service() {
             build()
         }.also { startForeground(1, it) }
 
-        daemon = ipfsd.run("daemon")
+        daemon = ipfsDaemon.run("daemon")
 
-        Thread{
+        Thread {
             daemon.inputStream.bufferedReader().forEachLine { println(it) }
         }.start()
-        Thread{
+        Thread {
             daemon.errorStream.bufferedReader().forEachLine { println(it) }
         }.start()
+
     }
 
-    override fun onDestroy() = super.onDestroy().also{
+    override fun onDestroy() = super.onDestroy().also {
         daemon.destroy()
         NotificationManagerCompat.from(this).cancel(1)
     }
 
-    override fun onStartCommand(i: Intent?, f: Int, id: Int) = START_STICKY.also{
+    override fun onStartCommand(i: Intent?, f: Int, id: Int) = START_STICKY.also {
         super.onStartCommand(i, f, id)
-        i?.action?.takeIf{it == "STOP"}?.also{stopSelf()}
+        i?.action?.takeIf { it == "STOP" }?.also { stopSelf() }
     }
 
 }
