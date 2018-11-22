@@ -75,7 +75,7 @@ class Daemon(private val ctx: Context) {
         }
 
         bin.setExecutable(true)
-        version.writeText(act.assets.open("version").reader().readText());
+        version.writeText(act.assets.open("version").reader().readText())
 
         progress.dismiss()
         callback()
