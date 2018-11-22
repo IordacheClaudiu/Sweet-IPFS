@@ -5,14 +5,13 @@ import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.os.Environment
 import android.support.v7.app.AppCompatActivity
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
+import io.ipfs.api.IPFS
 import net.glxn.qrgen.android.MatrixToImageConfig
 import net.glxn.qrgen.android.MatrixToImageWriter
-import io.ipfs.api.IPFS
 import org.ligi.tracedroid.TraceDroid
 import java.io.File
 
@@ -40,7 +39,7 @@ fun chain(vararg cbs: (() -> Unit) -> Unit) {
     last()
 }
 
-fun Activity.check(callback: () -> Unit, error: () -> Unit) = Thread {
+fun Activity.ipfsInitialized(callback: () -> Unit, error: () -> Unit) = Thread {
     try {
         ipfs.version()
         runOnUiThread(callback)
@@ -50,7 +49,7 @@ fun Activity.check(callback: () -> Unit, error: () -> Unit) = Thread {
 }.start()
 
 fun Activity.clipboard(text: String) {
-    val clipboard = getSystemService(AppCompatActivity.CLIPBOARD_SERVICE) as ClipboardManager;
+    val clipboard = getSystemService(AppCompatActivity.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.primaryClip = ClipData.newPlainText("text", text)
 }
 
@@ -76,7 +75,3 @@ fun Activity.tasker(thread: Thread, timeout: Int, error: () -> Unit) = {
     }
 }.let { Thread(it).start() }
 
-fun Activity.wait(timeout: Long, callback: () -> Unit) = {
-    Thread.sleep(timeout)
-    runOnUiThread { callback() }
-}.let { Thread(it) }.apply { start() }

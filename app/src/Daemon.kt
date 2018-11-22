@@ -9,22 +9,20 @@ import android.graphics.Color
 import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
+import android.util.Log
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import fr.rhaz.ipfs.sweet.R.drawable.notificon
-import java.io.File
+import services.ServiceUtils
 import java.io.FileReader
-import com.google.gson.Gson
-import java.io.IOException
-import java.net.InetAddress
 
 
 val Context.ipfsDaemon get() = Daemon(this)
 
-class Daemon(val ctx: Context) {
-
+class Daemon(private val ctx: Context) {
+    private val LOG_TAG = Daemon::class.java.name
     private val store by lazy { ctx.getExternalFilesDir(null)["ipfs"] }
     private val bin by lazy { ctx.filesDir["ipfsbin"] }
     private val version by lazy { ctx.getExternalFilesDir(null)["version"] }
@@ -33,14 +31,21 @@ class Daemon(val ctx: Context) {
 
     val config by lazy { JsonParser().parse(FileReader(store["config"])).asJsonObject }
 
-    fun config(consumer: (JsonObject) -> Unit) {
+    private fun config(consumer: (JsonObject) -> Unit) {
         GsonBuilder().setPrettyPrinting().create().toJson(config).toByteArray()
                 .also { store["config"].writeBytes(it) }
     }
 
-    fun check(callback: () -> Unit = {}, err: (String) -> Unit = {}) {
-        if (bin.exists()) callback()
-        else install(callback, err)
+    fun binaryCopied(): Boolean {
+        return bin.exists()
+    }
+
+    fun nodeInitialized(): Boolean {
+        return store.exists() && swarmFile.exists() && config != null
+    }
+
+    fun daemonIsRunning(): Boolean {
+        return ServiceUtils.isServiceRunning(ctx, DaemonService::class.java)
     }
 
     fun install(callback: () -> Unit, err: (String) -> Unit = {}) {
@@ -93,10 +98,10 @@ class Daemon(val ctx: Context) {
         Thread {
             val exec = run("init")
             Thread {
-                exec.inputStream.bufferedReader().forEachLine { println(it) }
+                exec.inputStream.bufferedReader().forEachLine { Log.d(LOG_TAG, it) }
             }.start()
             Thread {
-                exec.errorStream.bufferedReader().forEachLine { println(it) }
+                exec.errorStream.bufferedReader().forEachLine { Log.d(LOG_TAG, it) }
             }.start()
             exec.waitFor()
 
@@ -116,7 +121,6 @@ class Daemon(val ctx: Context) {
             }
 
             // change config file
-
             config.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
                 remove("LowWater")
                 addProperty("LowWater", 20)
@@ -128,7 +132,7 @@ class Daemon(val ctx: Context) {
 
             config.remove("Bootstrap")
             val array = JsonArray(1)
-            array.add("/ip4/82.137.20.248/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
+            array.add("/ip4/192.168.1.3/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
             config.add("Bootstrap", array)
 
             config { config }
@@ -170,11 +174,13 @@ class Daemon(val ctx: Context) {
 
 class DaemonService : Service() {
 
+    private val LOGTAG = DaemonService::class.java.name
+
     override fun onBind(i: Intent) = null
 
-    lateinit var daemon: Process
+    private lateinit var daemon: Process
 
-    override fun onCreate() = super.onCreate().also {
+    override fun onCreate() = super.onCreate().also { it ->
 
         val exit = Intent(this, DaemonService::class.java).apply {
             action = "STOP"
@@ -202,13 +208,13 @@ class DaemonService : Service() {
             build()
         }.also { startForeground(1, it) }
 
-        daemon = ipfsDaemon.run("daemon")
+        daemon = ipfsDaemon.run("daemon --enable-pubsub-experiment")
 
         Thread {
-            daemon.inputStream.bufferedReader().forEachLine { println(it) }
+            daemon.inputStream.bufferedReader().forEachLine { Log.d(LOGTAG, it) }
         }.start()
         Thread {
-            daemon.errorStream.bufferedReader().forEachLine { println(it) }
+            daemon.errorStream.bufferedReader().forEachLine { Log.d(LOGTAG, it) }
         }.start()
 
     }
@@ -222,5 +228,4 @@ class DaemonService : Service() {
         super.onStartCommand(i, f, id)
         i?.action?.takeIf { it == "STOP" }?.also { stopSelf() }
     }
-
 }

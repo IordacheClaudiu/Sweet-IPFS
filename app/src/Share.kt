@@ -30,7 +30,7 @@ class ShareActivity : AppCompatActivity() {
     // if no: ask to start it
     //      if yes: start it then continue
     //      if no: close the activity
-    fun check() = check(::process) {
+    private fun check() = ipfsInitialized(::process) {
         AlertDialog.Builder(this).apply {
             setTitle(getString(R.string.daemon_not_running))
             setPositiveButton(getString(R.string.start)) { d, _ ->
@@ -42,13 +42,13 @@ class ShareActivity : AppCompatActivity() {
 
     // Try to make a file then ask for wrapping it
     // if it could not: say that it could not with a button to close the activity
-    fun process() = intent.tempFile?.askWrap() ?: AlertDialog.Builder(this).apply {
+    private fun process() = intent.tempFile?.askWrap() ?: AlertDialog.Builder(this).apply {
         setTitle(getString(R.string.share_cannot_open))
         setNeutralButton(getString(R.string.close)) { _, _ -> finish() }
     }.show().let { Unit }
 
     // Create file from resource type
-    val Intent.tempFile
+    private val Intent.tempFile
         get() = when (type) {
             "text/plain" -> text?.tempFile
             else -> data?.apply { title = name }?.tempFile
@@ -58,7 +58,7 @@ class ShareActivity : AppCompatActivity() {
     val Intent.text get() = getStringExtra(EXTRA_TEXT)?.also { title = it }
 
     // Retrieve uri data
-    val Uri.inputStream get() = contentResolver.openInputStream(this)
+    private val Uri.inputStream get() = contentResolver.openInputStream(this)
 
     // Retrieve uri name
     val Uri.name: String
@@ -79,12 +79,12 @@ class ShareActivity : AppCompatActivity() {
     }
 
     // Create temp file from uri
-    val Uri.tempFile: File?
+    private val Uri.tempFile: File?
         get() =
             inputStream.copy(File.createTempFile("temp", name, cacheDir))
 
     // Create temp file from text
-    val String.tempFile: File?
+    private val String.tempFile: File?
         get() =
             byteInputStream().copy(File.createTempFile("temp", ".txt", cacheDir))
 
@@ -92,7 +92,7 @@ class ShareActivity : AppCompatActivity() {
     // try to add the file
     // then retrieve its hash
     // then show it
-    fun File.askWrap() = AlertDialog.Builder(ctx).apply {
+    private fun File.askWrap() = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_wrap))
         val wrapper = FileWrapper(this@askWrap)
         setPositiveButton(getString(R.string.yes)) { _, _ ->
@@ -117,7 +117,7 @@ class ShareActivity : AppCompatActivity() {
         }
     }.show().let { Unit }
 
-    fun error(ex: Exception? = null) = AlertDialog.Builder(ctx).apply {
+    private fun error(ex: Exception? = null) = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_error))
         setPositiveButton(getString(R.string.report)) { d, _ -> finish() }
         setNegativeButton(getString(R.string.close)) { _, _ -> finish() }

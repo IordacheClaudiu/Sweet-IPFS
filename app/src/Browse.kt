@@ -23,7 +23,7 @@ class BrowseActivity : AppCompatActivity() {
         setContentView(R.layout.activity_browse)
     }
 
-    val uri by lazy {
+    private val uri by lazy {
         intent.data ?: if (SDK_INT < M) null
         else Uri.parse(intent.getStringExtra(EXTRA_PROCESS_TEXT))
     }
@@ -63,7 +63,7 @@ class BrowseActivity : AppCompatActivity() {
                 }
             }.let { Unit }
 
-            check(::process) {
+            ipfsInitialized(::process) {
                 AlertDialog.Builder(ctx).apply {
                     setTitle(getString(R.string.daemon_not_running))
                     setPositiveButton(getString(R.string.start)) { d, _ ->
@@ -105,7 +105,7 @@ class IPXSResource(uri: Uri) {
 
     val valid get() = type != null && path != null
 
-    val path: String? = when (uri.scheme) {
+    private val path: String? = when (uri.scheme) {
         "ipfs", "ipns" -> uri.schemeSpecificPart.substring(2)
         "http", "https" -> uri.pathSegments.run { subList(1, size) }.joinToString("/")
         else -> when {

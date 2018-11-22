@@ -10,15 +10,18 @@ import android.support.v7.app.AppCompatActivity
 import android.text.format.Formatter
 import android.widget.EditText
 import android.widget.PopupMenu
-import com.google.gson.JsonArray
 import kotlinx.android.synthetic.main.activity_console.*
 import android.text.InputType
+import android.util.Log
 import io.ipfs.api.Peer
+import io.ipfs.multiaddr.MultiAddress
+import android.widget.LinearLayout
 
 
 class ConsoleActivity : AppCompatActivity() {
+    private val LOGTAG = ConsoleActivity::class.java.name
 
-    val ctx = this as Context
+    private val ctx = this as Context
 
     override fun onBackPressed() {}
 
@@ -118,7 +121,6 @@ class ConsoleActivity : AppCompatActivity() {
 
                     add(getString(R.string.menu_pins)).setOnMenuItemClickListener { notimpl() }
                     add(getString(R.string.menu_keys)).setOnMenuItemClickListener { notimpl() }
-                    add(getString(R.string.menu_pubsub)).setOnMenuItemClickListener { notimpl() }
                     addSubMenu(getString(R.string.menu_swarm)).apply {
                         add(getString(R.string.menu_swarm_connect)).setOnMenuItemClickListener { notimpl() }
                         add(getString(R.string.menu_swarm_disconnect)).setOnMenuItemClickListener { notimpl() }
@@ -132,7 +134,7 @@ class ConsoleActivity : AppCompatActivity() {
             }.show()
         }
 
-        infobtn.setOnClickListener {
+        configbtn.setOnClickListener {
             PopupMenu(ctx, it).apply {
                 menu.apply {
                     addSubMenu(getString(R.string.menu_identity)).apply {
@@ -162,13 +164,25 @@ class ConsoleActivity : AppCompatActivity() {
                         }
                     }
                     add(getString(R.string.menu_peers)).setOnMenuItemClickListener {
-                        async(50, { ipfs.swarm.peers() },
-                                {
-                                    println("success")
-                                }, {
-                                    println("error")
-                                }
-                        );true }
+                        async(50, { ipfs.swarm.peers() }, {
+                            var representation = "No peers."
+                            val peers = it as List<Peer>
+                            if (peers.isNotEmpty()) {
+                                representation = peers.joinToString(separator = "\n", transform = {
+                                    it.address.toString() + it.id
+                                })
+                            }
+                            AlertDialog.Builder(ctx).apply {
+                                setTitle(getString(R.string.menu_peers))
+                                setMessage(representation)
+                                setNeutralButton(getString(R.string.close)) { d, _ -> }
+                            }.show()
+                            Log.d(LOGTAG, "Swarm Peers success.")
+                        }, {
+                            Log.e(LOGTAG, "Swarm Peers error.")
+                        }
+                        );true
+                    }
 
                     add(getString(R.string.menu_others)).setOnMenuItemClickListener {
                         async(60, { ipfs.version() },
@@ -181,8 +195,8 @@ class ConsoleActivity : AppCompatActivity() {
                                         ${getString(R.string.others_api_address)}: ${addresses.getAsJsonPrimitive("API").asString}
                                         ${getString(R.string.others_gateway_address)}: ${addresses.getAsJsonPrimitive("Gateway").asString}
                                     """.trimIndent())
-                                        setNeutralButton(getString(R.string.close)) { d, _ -> }
-                                    }.show();
+                                        setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                    }.show()
                                 },
                                 {
                                     val addresses = ipfsDaemon.config.getAsJsonObject("Addresses")
@@ -193,75 +207,137 @@ class ConsoleActivity : AppCompatActivity() {
                                         ${getString(R.string.others_api_address)}: ${addresses.getAsJsonPrimitive("API").asString}
                                         ${getString(R.string.others_gateway_address)}: ${addresses.getAsJsonPrimitive("Gateway").asString}
                                     """.trimIndent())
-                                    }.show();
+                                    }.show()
                                 }
                         ); true
                     }
-                }
-            }.show()
-        }
-
-        configbtn.setOnClickListener {
-            PopupMenu(ctx, it).apply {
-                menu.apply {
-                    add(getString(R.string.menu_bootstrap)).setOnMenuItemClickListener { notimpl() }
-                    addSubMenu(getString(R.string.menu_gateway)).apply {
-                        add(getString(R.string.menu_gateway_writable)).apply {
-                            isCheckable = true
-                            isChecked = false
-                        }.setOnMenuItemClickListener { notimpl() }
-                    }
-                    addSubMenu(getString(R.string.menu_api)).apply {
-                        addSubMenu(getString(R.string.menu_api_http_headers)).apply {
-                            add(getString(R.string.menu_api_http_headers_addorigin)).setOnMenuItemClickListener {
+                    addSubMenu(getString(R.string.menu_bootstrap)).apply {
+                        add(getString(R.string.menu_bootstrap_list_all)).setOnMenuItemClickListener {
+                            async(60, { ipfs.bootstrap.list() }, {
+                                var representation = "No bootstrap nodes."
+                                val multiAddresses = it as List<MultiAddress>
+                                if (multiAddresses.isNotEmpty()) {
+                                    representation = multiAddresses.joinToString(separator = "\n")
+                                }
                                 AlertDialog.Builder(ctx).apply {
-                                    setTitle(getString(R.string.title_add_api_origin))
-                                    fun action(origin: String) {
-                                        ipfsDaemon.config {
-                                            it.getAsJsonObject("API").getAsJsonObject("HTTPHeaders").apply {
-                                                if (!has("Access-Control-Allow-Origin")) {
-                                                    add("Access-Control-Allow-Origin", JsonArray())
-                                                    getAsJsonArray("Access-Control-Allow-Origin")
-                                                            .add("http://localhost:3000")
-                                                }
-                                                getAsJsonArray("Access-Control-Allow-Origin").add(origin)
-                                            }
-                                        }
-                                        dismiss()
-                                    }
-
-                                    val input = EditText(ctx).also { setView(it) }.apply {
-                                        hint = "http://..."
-                                        setOnEditorActionListener { tv, i, keyEvent -> action(text.toString()); true }
-                                    }
-                                    setPositiveButton(getString(R.string.apply)) { d, _ -> action(input.text.toString()) }
-                                    setNegativeButton(getString(R.string.cancel)) { d, _ -> d.cancel() }
+                                    setTitle(getString(R.string.menu_bootstrap_list_all))
+                                    setMessage(representation)
+                                    setNeutralButton(getString(R.string.close)) { _, _ -> }
                                 }.show()
-                                true
-                            }
+                                Log.d(LOGTAG, "Bootstrap list success.")
+                            }, {
+                                Log.d(LOGTAG, "Bootstrap list error.")
+                            }); true
+                        }
+                        add(getString(R.string.menu_bootstrap_add_node)).setOnMenuItemClickListener {
+                            AlertDialog.Builder(ctx).apply {
+                                setTitle(getString(R.string.title_bootstrap_add_node))
+                                val txtView = EditText(ctx).apply {
+                                    inputType = InputType.TYPE_CLASS_TEXT
+                                    setView(this)
+                                }
+                                setPositiveButton(getString(R.string.apply)) { _, _ ->
+                                    val txtInput = txtView.text.toString()
+                                    if (txtInput.isBlank()) {
+                                        return@setPositiveButton
+                                    }
+                                    val nodeAddress: MultiAddress
+                                    try {
+                                        nodeAddress = MultiAddress(txtInput)
+                                    } catch (e: IllegalStateException) {
+                                        Log.d(LOGTAG, "Bootstrap add node error:" + e.localizedMessage)
+                                        return@setPositiveButton
+                                    }
+                                    async(60, { ipfs.bootstrap.add(nodeAddress) },
+                                            {
+                                                Log.d(LOGTAG, "Bootstrap add node success.")
+                                            }, {
+                                        Log.d(LOGTAG, "Bootstrap add node error.")
+                                    })
+                                }
+                                setNegativeButton(getString(R.string.cancel)) { _, _ -> }
+                            }.show(); true
                         }
                     }
-                    addSubMenu(getString(R.string.menu_reprovider)).apply {
-                        add(getString(R.string.menu_reprovider_interval)).setOnMenuItemClickListener { notimpl() }
-                        add(getString(R.string.menu_reprovider_strategy)).setOnMenuItemClickListener { notimpl() }
-                    }
-                    addSubMenu(getString(R.string.menu_experimental)).apply {
-                        add(getString(R.string.menu_experimental_filestore)).apply {
-                            isCheckable = true
-                            isChecked = false
-                        }.setOnMenuItemClickListener { notimpl() }
-                        add(getString(R.string.menu_experimental_urlstore)).apply {
-                            isCheckable = true
-                            isChecked = false
-                        }.setOnMenuItemClickListener { notimpl() }
-                        add(getString(R.string.menu_experimental_sharding)).apply {
-                            isCheckable = true
-                            isChecked = false
-                        }.setOnMenuItemClickListener { notimpl() }
-                        add(getString(R.string.menu_experimental_libp2p_stream_mounting)).apply {
-                            isCheckable = true
-                            isChecked = false
-                        }.setOnMenuItemClickListener { notimpl() }
+                    addSubMenu(getString(R.string.menu_pubsub)).apply {
+                        add(getString(R.string.menu_pubsub_list_rooms)).setOnMenuItemClickListener {
+                            async(60, {
+                                ipfs.pubsub.ls()
+                            }, {
+                                val map = it as Map<String, List<String>>
+                                val rooms = map["Strings"]
+                                var text = "No rooms."
+                                if (rooms != null && rooms.isNotEmpty()) {
+                                    text = rooms.joinToString(separator = "\n")
+                                }
+                                AlertDialog.Builder(ctx).apply {
+                                    setTitle(getString(R.string.menu_pubsub_list_rooms))
+                                    setMessage(text)
+                                    setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                }.show()
+
+                                Log.d(LOGTAG, "PubSub list rooms success.")
+                            }, {
+
+                                Log.d(LOGTAG, "PubSub list rooms error.")
+                            }); true
+                        }
+                        add(getString(R.string.menu_pubsub_join_room)).setOnMenuItemClickListener {
+                            AlertDialog.Builder(ctx).apply {
+                                setTitle(getString(R.string.menu_pubsub_join_room))
+                                val txtView = EditText(ctx).apply {
+                                    inputType = InputType.TYPE_CLASS_TEXT
+                                    setView(this)
+                                }
+                                setPositiveButton(getString(R.string.apply)) { _, _ ->
+                                    val room = txtView.text.toString()
+                                    if (room.isBlank()) {
+                                        return@setPositiveButton
+                                    }
+                                    async(60, { ipfs.pubsub.sub(room) },
+                                            {
+                                                Log.d(LOGTAG, "PubSub join room succedeed.")
+                                            }, {
+                                        Log.d(LOGTAG, "PubSub join room error.")
+                                    })
+                                }
+                                setNegativeButton(getString(R.string.cancel)) { _, _ -> }
+                            }.show(); true
+                        }
+                        add(getString(R.string.menu_pubsub_post_to_room)).setOnMenuItemClickListener {
+
+                            AlertDialog.Builder(ctx).apply {
+                                val layout = LinearLayout(ctx)
+                                layout.orientation = LinearLayout.VERTICAL
+                                val topicTextView = EditText(ctx).apply {
+                                    inputType = InputType.TYPE_CLASS_TEXT
+                                    hint = "Enter room name"
+                                }
+
+                                layout.addView(topicTextView)
+                                val messageTextView = EditText(ctx).apply {
+                                    inputType = InputType.TYPE_CLASS_TEXT
+                                    hint = "Enter message"
+                                }
+                                layout.addView(messageTextView)
+                                setView(layout)
+                                setPositiveButton(getString(R.string.apply)) { _, _ ->
+                                    val room = topicTextView.text.toString()
+                                    val message = messageTextView.text.toString()
+                                    if (room.isNotBlank() && message.isNotBlank()) {
+                                        async(60,
+                                                { ipfs.pubsub.pub(room, message) },
+                                                { Log.d(LOGTAG, "PubSub post to room $room succedeed.") },
+                                                { Log.d(LOGTAG, "PubSub post room ${room} failed.") }
+                                        )
+                                    } else {
+
+                                    }
+                                }
+                                setNegativeButton(getString(R.string.cancel)) { _, _ -> }
+                            }.show(); true
+                        }
+
                     }
                 }
             }.show()
@@ -271,7 +347,7 @@ class ConsoleActivity : AppCompatActivity() {
 
     override fun onActivityResult(req: Int, res: Int, rdata: Intent?) {
         super.onActivityResult(req, res, rdata)
-        if (res != RESULT_OK) return;
+        if (res != RESULT_OK) return
         when (req) {
             1 -> Intent(ctx, ShareActivity::class.java).apply {
                 data = rdata?.data ?: return

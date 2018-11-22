@@ -20,18 +20,6 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
-//    applicationVariants.all { variant ->
-//        variant.outputs.all {
-//            outputFileName = "$archivesBaseName-${variant.name}.apk"
-//        }
-//        variant.assemble.doLast { assemble ->
-//            copy {
-//                from variant.outputs*.outputFile
-//                into file("/apk")
-//            }
-//        }
-//    }
-
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -57,7 +45,7 @@ dependencies {
 
     implementation "org.ligi:tracedroid:1.4"
     implementation 'com.github.kenglxn.QRGen:android:2.4.0'
-    implementation 'com.github.ipfs:java-ipfs-api:v1.2.1'
+    implementation 'com.github.ipfs:java-ipfs-api:v1.2.2'
     implementation 'com.github.multiformats:java-multiaddr:v1.3.1'
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'com.github.tbruyelle:rxpermissions:0.10.1'

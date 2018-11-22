@@ -19,6 +19,9 @@
     <string name="menu_pins">Pins management</string>
     <string name="menu_keys">Keys management</string>
     <string name="menu_pubsub" translatable="false">Pub/Sub</string>
+    <string name="menu_pubsub_list_rooms">List rooms</string>
+    <string name="menu_pubsub_join_room">Join room</string>
+    <string name="menu_pubsub_post_to_room">Post to room</string>
     <string name="menu_swarm" translatable="false">Swarm</string>
     <string name="menu_swarm_connect">Connect to…</string>
     <string name="menu_swarm_disconnect">Disconnect from…</string>
@@ -32,6 +35,7 @@
     <string name="copy">Copy</string>
     <string name="close">Close</string>
     <string name="menu_identity_privatekey">Private Key</string>
+    <string name="menu_identity_daemon_addresses">Daemon addresses</string>
     <string name="title_privatekey">Private Key</string>
     <string name="menu_peers">Peers</string>
     <string name="menu_others">Others</string>
@@ -41,6 +45,9 @@
     <string name="others_api_address">API address</string>
     <string name="others_gateway_address">Gateway address</string>
     <string name="menu_bootstrap" translatable="false">Bootstrap</string>
+    <string name="menu_bootstrap_list_all">List all nodes</string>
+    <string name="menu_bootstrap_add_node">Add node</string>
+    <string name="title_bootstrap_add_node">Add node</string>
     <string name="menu_gateway">Gateway</string>
     <string name="menu_gateway_writable">Writable</string>
     <string name="menu_api">API</string>
