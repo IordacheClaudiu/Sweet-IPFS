@@ -32,7 +32,7 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
     private val MY_PERMISSIONS_REQUEST_FINE_LOCATION = 100
 
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
-    private val notimpl = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
+    private val notImplemented = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
 
     private val locationListener = object : LocationListener {
 
@@ -59,7 +59,7 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
     override fun onCreate(state: Bundle?) = super.onCreate(state).also {
         setContentView(R.layout.activity_console)
         setupInputEditText()
-        setupActionBtn(notimpl)
+        setupActionBtn(notImplemented)
         setupConfigBtn()
         setupLocationManager()
     }
