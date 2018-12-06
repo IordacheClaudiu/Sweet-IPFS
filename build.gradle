@@ -3,6 +3,8 @@ buildscript {
         kotlin_version = '1.2.61'
         support_version = '27.1.1'
         dagger_version = '2.15'
+        java_ipfs_api = '1.2.2'
+        anko_version = '0.10.8'
         permissiondispatcher_version = '3.2.0'
     }
 
