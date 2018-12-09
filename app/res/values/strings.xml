@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">IPFS Calamities</string>
+    <string name="username">Username</string>
+    <string name="button_submit">Submit</string>
     <string name="button_run_daemon">Start Daemon</string>
     <string name="console_hint" translatable="false">name publish Qm…</string>
     <string name="menu_config">Config</string>
@@ -84,4 +86,5 @@
     <string name="apply">Apply</string>
     <string name="title_add_folder">Add folder to IPFS</string>
     <string name="title_add_text">Add text to IPFS</string>
+    <string name="main_username_hint">Input for username</string>
 </resources>
