@@ -1,4 +1,4 @@
-package fr.rhaz.ipfs.sweet
+package ro.uaic.info.ipfs
 
 import android.app.AlertDialog
 import android.content.Intent
@@ -119,7 +119,7 @@ class ShareActivity : AppCompatActivity() {
 
     private fun error(ex: Exception? = null) = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_error))
-        setPositiveButton(getString(R.string.report)) { d, _ -> finish() }
+        setPositiveButton(getString(R.string.report)) { _, _ -> finish() }
         setNegativeButton(getString(R.string.close)) { _, _ -> finish() }
     }.show().let { Unit }
 

@@ -1,4 +1,4 @@
-package fr.rhaz.ipfs.sweet
+package ro.uaic.info.ipfs
 
 import android.R.drawable.ic_menu_close_clear_cancel
 import android.app.*
@@ -14,7 +14,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import fr.rhaz.ipfs.sweet.R.drawable.notificon
+import ro.uaic.info.ipfs.R.drawable.notificon
 import services.ServiceUtils
 import java.io.FileReader
 
@@ -180,7 +180,7 @@ class DaemonService : Service() {
 
     private lateinit var daemon: Process
 
-    override fun onCreate() = super.onCreate().also { it ->
+    override fun onCreate() = super.onCreate().also { _ ->
 
         val exit = Intent(this, DaemonService::class.java).apply {
             action = "STOP"

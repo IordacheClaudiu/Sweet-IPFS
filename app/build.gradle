@@ -11,12 +11,12 @@ android {
     }
 
     defaultConfig {
-        applicationId "fr.rhaz.ipfs.sweet"
+        applicationId "ro.uaic.info.ipfs"
         minSdkVersion 24
         targetSdkVersion 27
         versionCode 14
         versionName "0.1.4"
-        archivesBaseName = "sweetipfs-$versionName"
+        archivesBaseName = "ipfs-calamities-$versionName"
         vectorDrawables.useSupportLibrary = true
     }
 

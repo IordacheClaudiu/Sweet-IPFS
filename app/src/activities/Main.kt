@@ -1,4 +1,4 @@
-package fr.rhaz.ipfs.sweet
+package ro.uaic.info.ipfs
 
 import android.Manifest.permission.*
 import android.content.Intent

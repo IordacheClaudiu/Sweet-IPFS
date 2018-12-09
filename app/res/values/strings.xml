@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Sweet IPFS</string>
+    <string name="app_name" translatable="false">IPFS Calamities</string>
     <string name="button_run_daemon">Start Daemon</string>
     <string name="console_hint" translatable="false">name publish Qm…</string>
     <string name="menu_config">Config</string>

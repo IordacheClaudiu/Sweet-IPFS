@@ -1,4 +1,4 @@
-package fr.rhaz.ipfs.sweet
+package ro.uaic.info.ipfs
 
 import android.Manifest
 import android.app.AlertDialog
@@ -124,7 +124,7 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
     }
 
     private fun setupInputEditText() {
-        input.setOnEditorActionListener { textview, i, ev ->
+        input.setOnEditorActionListener { _, _, _ ->
             true.also {
                 val cmd = input.text.toString()
                 console.apply {
@@ -175,8 +175,8 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                             AlertDialog.Builder(ctx).apply {
                                 setTitle(getString(R.string.title_peerid))
                                 setMessage(id)
-                                setPositiveButton(getString(R.string.copy)) { d, _ -> }
-                                setNeutralButton(getString(R.string.close)) { d, _ -> }
+                                setPositiveButton(getString(R.string.copy)) { _, _ -> }
+                                setNeutralButton(getString(R.string.close)) { _, _ -> }
                             }.show().apply {
                                 getButton(AlertDialog.BUTTON_POSITIVE)
                                         .setOnClickListener { clipboard(id) }
@@ -187,8 +187,8 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                             AlertDialog.Builder(ctx).apply {
                                 setTitle(getString(R.string.title_privatekey))
                                 setMessage(key)
-                                setPositiveButton(getString(R.string.copy)) { d, _ -> }
-                                setNeutralButton(getString(R.string.close)) { d, _ -> }
+                                setPositiveButton(getString(R.string.copy)) { _, _ -> }
+                                setNeutralButton(getString(R.string.close)) { _, _ -> }
                             }.show().apply {
                                 getButton(AlertDialog.BUTTON_POSITIVE)
                                         .setOnClickListener { clipboard(key) }
@@ -207,7 +207,7 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                             AlertDialog.Builder(ctx).apply {
                                 setTitle(getString(R.string.menu_peers))
                                 setMessage(representation)
-                                setNeutralButton(getString(R.string.close)) { d, _ -> }
+                                setNeutralButton(getString(R.string.close)) { _, _ -> }
                             }.show()
                             debug { "Swarm Peers success." }
                         }, {
@@ -418,13 +418,13 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                                 setView(this)
                             }
-                            setPositiveButton(getString(R.string.apply)) { d, _ ->
+                            setPositiveButton(getString(R.string.apply)) { _, _ ->
                                 Intent(ctx, ShareActivity::class.java).apply {
                                     type = "text/plain"
                                     putExtra(EXTRA_TEXT, txt.text.toString())
                                 }
                             }
-                            setNegativeButton(getString(R.string.cancel)) { d, _ -> }
+                            setNegativeButton(getString(R.string.cancel)) { _, _ -> }
                         }.show(); true
                     }
 
