@@ -28,14 +28,16 @@ import io.ipfs.api.Peer
 import io.ipfs.multiaddr.MultiAddress
 import kotlinx.android.synthetic.main.activity_console.*
 import models.IIpfsResource
+import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
+import utils.ResourceSender
 import java.util.function.Consumer
 import java.util.stream.Collectors
 
 
-class ConsoleActivity : AppCompatActivity(), AnkoLogger {
+class ConsoleActivity : AppCompatActivity() , AnkoLogger {
 
     private val ctx = this as Context
     private val MY_PERMISSIONS_REQUEST_FINE_LOCATION = 100
@@ -43,17 +45,18 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var adapter: ResourcesRecyclerAdapter
-
     private val notImplemented = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
-
+    private var resourceSender: ResourceSender? = null
+    private var lastKnownLocation: Location? = null
     private val locationListener = object : LocationListener {
 
         override fun onLocationChanged(location: Location) {
             debug { location }
-            // Called when a new location is found by the network location provider.
+            lastKnownLocation = location
+            resourceSender?.send(lastKnownLocation !!)
         }
 
-        override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {
+        override fun onStatusChanged(provider: String , status: Int , extras: Bundle) {
             debug { "onStatusChanged: $status" }
         }
 
@@ -68,18 +71,19 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
 
     override fun onCreate(state: Bundle?) = super.onCreate(state).also {
         setContentView(R.layout.activity_console)
-        setupReciclerView()
+        setupLocationManager()
+        setupCurrentPeer()
+        setupRecyclerView()
         setupActionBtn(notImplemented)
         setupConfigBtn()
         setupFloatingButton()
-        setupLocationManager()
     }
 
-    override fun onActivityResult(req: Int, res: Int, rdata: Intent?) {
-        super.onActivityResult(req, res, rdata)
+    override fun onActivityResult(req: Int , res: Int , rdata: Intent?) {
+        super.onActivityResult(req , res , rdata)
         if (res != RESULT_OK) return
         when (req) {
-            1 -> Intent(ctx, ShareActivity::class.java).apply {
+            1 -> Intent(ctx , ShareActivity::class.java).apply {
                 data = rdata?.data ?: return
                 action = ACTION_SEND
                 startActivity(this)
@@ -87,14 +91,14 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int,
-                                            permissions: Array<String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int ,
+                                            permissions: Array<String> , grantResults: IntArray) {
         when (requestCode) {
             MY_PERMISSIONS_REQUEST_FINE_LOCATION -> {
                 // If request is cancelled, the result arrays are empty.
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     try {
-                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, locationListener)
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER , 0 , 0f , locationListener)
                     } catch (e: SecurityException) {
                         error { e }
                     }
@@ -115,42 +119,59 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
         locationManager.removeUpdates(locationListener)
     }
 
-    private fun setupReciclerView() {
+    private fun setupRecyclerView() {
         linearLayoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = linearLayoutManager
         val resources: MutableList<IIpfsResource> = mutableListOf()
         adapter = ResourcesRecyclerAdapter(resources)
         recyclerView.adapter = adapter
-//        doAsync {
-//            val peers = ipfs.swarm.peers()
-//            uiThread {
-//                adapter.add(peers)
-//            }
-//        }
     }
 
     private fun setupLocationManager() {
-        if (ContextCompat.checkSelfPermission(this,
+        if (ContextCompat.checkSelfPermission(this ,
                         Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this ,
                             Manifest.permission.ACCESS_FINE_LOCATION)) {
                 // Show an explanation to the user *asynchronously* -- don't block
                 // this thread waiting for the user's response! After the user
                 // sees the explanation, try again to request the permission.
             } else {
-                ActivityCompat.requestPermissions(this,
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                ActivityCompat.requestPermissions(this ,
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION) ,
                         MY_PERMISSIONS_REQUEST_FINE_LOCATION)
             }
         } else {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, locationListener)
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER ,
+                    0 ,
+                    0f ,
+                    locationListener)
+        }
+    }
+
+    private fun setupCurrentPeer() {
+        doAsync {
+            val id = ipfs.id()
+            print(id)
+            uiThread {
+                var multiAddress: MultiAddress? = null
+                if (id.containsKey("Addresses")) {
+                    val list = id["Addresses"] as List<String>
+                    multiAddress = MultiAddress(list[1])
+                }
+                if (multiAddress != null) {
+                    resourceSender = ResourceSender(ctx , PeerDTO(multiAddress) , ipfs)
+                    if (lastKnownLocation != null) {
+                        resourceSender !!.send(lastKnownLocation !!)
+                    }
+                }
+            }
         }
     }
 
     private fun setupConfigBtn() {
         configbtn.setOnClickListener {
-            PopupMenu(ctx, it).apply {
+            PopupMenu(ctx , it).apply {
                 menu.apply {
                     addSubMenu(getString(R.string.menu_identity)).apply {
                         add(getString(R.string.menu_identity_peerid)).setOnMenuItemClickListener {
@@ -158,8 +179,8 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                             AlertDialog.Builder(ctx).apply {
                                 setTitle(getString(R.string.title_peerid))
                                 setMessage(id)
-                                setPositiveButton(getString(R.string.copy)) { _, _ -> }
-                                setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                setPositiveButton(getString(R.string.copy)) { _ , _ -> }
+                                setNeutralButton(getString(R.string.close)) { _ , _ -> }
                             }.show().apply {
                                 getButton(AlertDialog.BUTTON_POSITIVE)
                                         .setOnClickListener { clipboard(id) }
@@ -170,8 +191,8 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                             AlertDialog.Builder(ctx).apply {
                                 setTitle(getString(R.string.title_privatekey))
                                 setMessage(key)
-                                setPositiveButton(getString(R.string.copy)) { _, _ -> }
-                                setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                setPositiveButton(getString(R.string.copy)) { _ , _ -> }
+                                setNeutralButton(getString(R.string.close)) { _ , _ -> }
                             }.show().apply {
                                 getButton(AlertDialog.BUTTON_POSITIVE)
                                         .setOnClickListener { clipboard(key) }
@@ -179,28 +200,28 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                         }
                     }
                     add(getString(R.string.menu_peers)).setOnMenuItemClickListener {
-                        async(50, { ipfs.swarm.peers() }, {
+                        async(50 , { ipfs.swarm.peers() } , {
                             var representation = "No peers."
                             val peers = it as List<Peer>
                             if (peers.isNotEmpty()) {
-                                representation = peers.joinToString(separator = "\n", transform = {
+                                representation = peers.joinToString(separator = "\n" , transform = {
                                     it.address.toString() + it.id
                                 })
                             }
                             AlertDialog.Builder(ctx).apply {
                                 setTitle(getString(R.string.menu_peers))
                                 setMessage(representation)
-                                setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                setNeutralButton(getString(R.string.close)) { _ , _ -> }
                             }.show()
                             debug { "Swarm Peers success." }
-                        }, {
+                        } , {
                             debug { "Swarm Peers error." }
                         }
                         );true
                     }
 
                     add(getString(R.string.menu_others)).setOnMenuItemClickListener {
-                        async(60, { ipfs.version() },
+                        async(60 , { ipfs.version() } ,
                                 {
                                     val addresses = ipfsDaemon.config.getAsJsonObject("Addresses")
                                     AlertDialog.Builder(ctx).apply {
@@ -210,9 +231,9 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                             ${getString(R.string.others_api_address)}: ${addresses.getAsJsonPrimitive("API").asString}
                                             ${getString(R.string.others_gateway_address)}: ${addresses.getAsJsonPrimitive("Gateway").asString}
                                         """.trimIndent())
-                                        setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                        setNeutralButton(getString(R.string.close)) { _ , _ -> }
                                     }.show()
-                                },
+                                } ,
                                 {
                                     val addresses = ipfsDaemon.config.getAsJsonObject("Addresses")
                                     AlertDialog.Builder(ctx).apply {
@@ -228,7 +249,7 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                     }
                     addSubMenu(getString(R.string.menu_bootstrap)).apply {
                         add(getString(R.string.menu_bootstrap_list_all)).setOnMenuItemClickListener {
-                            async(60, { ipfs.bootstrap.list() }, {
+                            async(60 , { ipfs.bootstrap.list() } , {
                                 var representation = "No bootstrap nodes."
                                 val multiAddresses = it as List<MultiAddress>
                                 if (multiAddresses.isNotEmpty()) {
@@ -237,10 +258,10 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                 AlertDialog.Builder(ctx).apply {
                                     setTitle(getString(R.string.menu_bootstrap_list_all))
                                     setMessage(representation)
-                                    setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                    setNeutralButton(getString(R.string.close)) { _ , _ -> }
                                 }.show()
                                 debug { "Bootstrap list success." }
-                            }, {
+                            } , {
                                 debug { "Bootstrap list error." }
                             }); true
                         }
@@ -251,7 +272,7 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                     inputType = InputType.TYPE_CLASS_TEXT
                                     setView(this)
                                 }
-                                setPositiveButton(getString(R.string.apply)) { _, _ ->
+                                setPositiveButton(getString(R.string.apply)) { _ , _ ->
                                     val txtInput = txtView.text.toString()
                                     if (txtInput.isBlank()) {
                                         return@setPositiveButton
@@ -263,24 +284,24 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                         debug { "Bootstrap add node error:" + e.localizedMessage }
                                         return@setPositiveButton
                                     }
-                                    async(60, { ipfs.bootstrap.add(nodeAddress) },
+                                    async(60 , { ipfs.bootstrap.add(nodeAddress) } ,
                                             {
                                                 debug { "Bootstrap add node success." }
-                                            }, {
+                                            } , {
                                         debug { "Bootstrap add node error." }
                                     })
                                 }
-                                setNegativeButton(getString(R.string.cancel)) { _, _ -> }
+                                setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
                             }.show(); true
                         }
                     }
                     addSubMenu(getString(R.string.menu_pubsub)).apply {
                         add(getString(R.string.menu_pubsub_list_rooms)).setOnMenuItemClickListener {
-                            async(60, {
+                            async(60 , {
                                 ipfs.pubsub.ls()
-                            }, {
+                            } , {
 
-                                val map = it as Map<String, List<String>>
+                                val map = it as Map<String , List<String>>
                                 val rooms = map["Strings"]
                                 var text = "No rooms."
                                 if (rooms != null && rooms.isNotEmpty()) {
@@ -289,10 +310,10 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                 AlertDialog.Builder(ctx).apply {
                                     setTitle(getString(R.string.menu_pubsub_list_rooms))
                                     setMessage(text)
-                                    setNeutralButton(getString(R.string.close)) { _, _ -> }
+                                    setNeutralButton(getString(R.string.close)) { _ , _ -> }
                                 }.show()
                                 debug { "PubSub list rooms success." }
-                            }, {
+                            } , {
                                 debug { "PubSub list rooms error." }
                             }); true
                         }
@@ -303,19 +324,19 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                     inputType = InputType.TYPE_CLASS_TEXT
                                     setView(this)
                                 }
-                                setPositiveButton(getString(R.string.apply)) { _, _ ->
+                                setPositiveButton(getString(R.string.apply)) { _ , _ ->
                                     val room = txtView.text.toString()
                                     if (room.isBlank()) {
                                         return@setPositiveButton
                                     }
-                                    async(60, { ipfs.pubsub.sub(room) },
+                                    async(60 , { ipfs.pubsub.sub(room) } ,
                                             {
                                                 debug { "PubSub join room succedeed." }
-                                            }, {
+                                            } , {
                                         debug { "PubSub join room error." }
                                     })
                                 }
-                                setNegativeButton(getString(R.string.cancel)) { _, _ -> }
+                                setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
                             }.show(); true
                         }
                         add(getString(R.string.menu_pubsub_post_to_room)).setOnMenuItemClickListener {
@@ -334,32 +355,32 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                 }
                                 layout.addView(messageTextView)
                                 setView(layout)
-                                setPositiveButton(getString(R.string.apply)) { _, _ ->
+                                setPositiveButton(getString(R.string.apply)) { _ , _ ->
                                     val room = topicTextView.text.toString()
                                     val message = messageTextView.text.toString()
                                     if (room.isNotBlank() && message.isNotBlank()) {
-                                        async(60,
-                                                { ipfs.pubsub.pub(room, message) },
-                                                { debug { "PubSub post to room $room succedeed." } },
+                                        async(60 ,
+                                                { ipfs.pubsub.pub(room , message) } ,
+                                                { debug { "PubSub post to room $room succedeed." } } ,
                                                 { debug { "PubSub post room ${room} failed.\")" } }
                                         )
                                     } else {
 
                                     }
                                 }
-                                setNegativeButton(getString(R.string.cancel)) { _, _ -> }
+                                setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
                             }.show(); true
                         }
                         add("Listen").setOnMenuItemClickListener {
                             doAsync {
                                 val sub = ipfs.pubsub.sub("topic")
-                                ipfs.pubsub.sub("topic", Consumer {
+                                ipfs.pubsub.sub("topic" , Consumer {
                                     print(it)
-                                }, Consumer {
+                                } , Consumer {
                                     print(it)
                                 })
-                                ipfs.pubsub.pub("topic", "mobile1")
-                                ipfs.pubsub.pub("topic", "mobile2")
+                                ipfs.pubsub.pub("topic" , "mobile1")
+                                ipfs.pubsub.pub("topic" , "mobile2")
                                 val results = sub.limit(2).collect(Collectors.toList())
                                 uiThread {
                                     print(results)
@@ -376,12 +397,12 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
 
     private fun setupActionBtn(notimpl: () -> Boolean) {
         actionbtn.setOnClickListener { btn ->
-            PopupMenu(ctx, btn).apply {
+            PopupMenu(ctx , btn).apply {
                 menu.apply {
                     add(getString(R.string.menu_add_file)).setOnMenuItemClickListener {
                         Intent(ACTION_GET_CONTENT).apply {
                             type = "*/*"
-                            startActivityForResult(createChooser(this, getString(R.string.title_add_file)), 1)
+                            startActivityForResult(createChooser(this , getString(R.string.title_add_file)) , 1)
                         }; true
                     }
 
@@ -389,7 +410,7 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             Intent(ACTION_OPEN_DOCUMENT_TREE).apply {
                                 type = "*/*"
-                                startActivityForResult(createChooser(this, getString(R.string.title_add_folder)), 2)
+                                startActivityForResult(createChooser(this , getString(R.string.title_add_folder)) , 2)
                             }
                         }; true
                     }
@@ -401,13 +422,13 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                                 setView(this)
                             }
-                            setPositiveButton(getString(R.string.apply)) { _, _ ->
-                                Intent(ctx, ShareActivity::class.java).apply {
+                            setPositiveButton(getString(R.string.apply)) { _ , _ ->
+                                Intent(ctx , ShareActivity::class.java).apply {
                                     type = "text/plain"
-                                    putExtra(EXTRA_TEXT, txt.text.toString())
+                                    putExtra(EXTRA_TEXT , txt.text.toString())
                                 }
                             }
-                            setNegativeButton(getString(R.string.cancel)) { _, _ -> }
+                            setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
                         }.show(); true
                     }
 
@@ -441,8 +462,8 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
 
     private fun setupFloatingButton() {
         floatingBtn.setOnClickListener {
-            Snackbar.make(it, "Here's a Snackbar", Snackbar.LENGTH_LONG)
-                    .setAction("Action", null)
+            Snackbar.make(it , "Here's a Snackbar" , Snackbar.LENGTH_LONG)
+                    .setAction("Action" , null)
                     .show()
         }
     }
