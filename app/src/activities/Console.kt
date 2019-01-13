@@ -1,5 +1,6 @@
 package ro.uaic.info.ipfs
 
+import adapters.ResourcesRecyclerAdapter
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
@@ -11,9 +12,11 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
 import android.text.InputType
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -21,6 +24,7 @@ import android.widget.PopupMenu
 import io.ipfs.api.Peer
 import io.ipfs.multiaddr.MultiAddress
 import kotlinx.android.synthetic.main.activity_console.*
+import models.IIpfsResource
 import org.jetbrains.anko.*
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -32,6 +36,9 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
     private val MY_PERMISSIONS_REQUEST_FINE_LOCATION = 100
 
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
+    private lateinit var linearLayoutManager: LinearLayoutManager
+    private lateinit var adapter: ResourcesRecyclerAdapter
+
     private val notImplemented = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
 
     private val locationListener = object : LocationListener {
@@ -54,13 +61,12 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
         }
     }
 
-    override fun onBackPressed() {}
-
     override fun onCreate(state: Bundle?) = super.onCreate(state).also {
         setContentView(R.layout.activity_console)
-        setupInputEditText()
+        setupReciclerView()
         setupActionBtn(notImplemented)
         setupConfigBtn()
+        setupFloatingButton()
         setupLocationManager()
     }
 
@@ -104,6 +110,20 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
         locationManager.removeUpdates(locationListener)
     }
 
+    private fun setupReciclerView() {
+        linearLayoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = linearLayoutManager
+        val resources: MutableList<IIpfsResource> = mutableListOf()
+        adapter = ResourcesRecyclerAdapter(resources)
+        recyclerView.adapter = adapter
+//        doAsync {
+//            val peers = ipfs.swarm.peers()
+//            uiThread {
+//                adapter.add(peers)
+//            }
+//        }
+    }
+
     private fun setupLocationManager() {
         if (ContextCompat.checkSelfPermission(this,
                         Manifest.permission.ACCESS_FINE_LOCATION)
@@ -120,48 +140,6 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
             }
         } else {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, locationListener)
-        }
-    }
-
-    private fun setupInputEditText() {
-        input.setOnEditorActionListener { _, _, _ ->
-            true.also {
-                val cmd = input.text.toString()
-                console.apply {
-                    text = "${console.text}\n> $cmd"
-                    post {
-                        val y = layout.getLineTop(lineCount) - height
-                        if (y > 0) scrollTo(0, y)
-                    }
-                }
-                Thread {
-                    ipfsDaemon.run(cmd).apply {
-                        inputStream.bufferedReader().readLines().forEach {
-                            runOnUiThread {
-                                console.apply {
-                                    text = "${console.text}\n$it"
-                                    post {
-                                        val y = layout.getLineTop(lineCount) - height
-                                        if (y > 0) scrollTo(0, y)
-                                    }
-                                }
-                            }
-                        }
-                        errorStream.bufferedReader().readLines().forEach {
-                            runOnUiThread {
-                                console.apply {
-                                    text = "${console.text}\n$it"
-                                    post {
-                                        val y = layout.getLineTop(lineCount) - height
-                                        if (y > 0) scrollTo(0, y)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }.start()
-                input.text.clear()
-            }
         }
     }
 
@@ -453,6 +431,14 @@ class ConsoleActivity : AppCompatActivity(), AnkoLogger {
                     }
                 }
             }.show()
+        }
+    }
+
+    private fun setupFloatingButton() {
+        floatingBtn.setOnClickListener {
+            Snackbar.make(it, "Here's a Snackbar", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null)
+                    .show()
         }
     }
 }
