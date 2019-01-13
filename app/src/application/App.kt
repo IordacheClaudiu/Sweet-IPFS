@@ -1,4 +1,4 @@
-package ro.uaic.info.ipfs
+package application;
 
 import android.app.Activity
 import android.app.Application

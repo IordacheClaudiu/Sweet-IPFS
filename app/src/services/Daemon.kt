@@ -1,5 +1,6 @@
-package ro.uaic.info.ipfs
+package services
 
+import activities.MainActivity
 import android.R.drawable.ic_menu_close_clear_cancel
 import android.app.*
 import android.app.NotificationManager.IMPORTANCE_MIN
@@ -10,12 +11,12 @@ import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.util.Log
+import application.*
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import ro.uaic.info.ipfs.R.drawable.notificon
-import services.ServiceUtils
+import ro.uaic.info.ipfs.R
 import java.io.FileReader
 
 
@@ -199,7 +200,7 @@ class DaemonService : Service() {
         NotificationCompat.Builder(this, "sweetipfs").run {
             setOngoing(true)
             color = Color.parseColor("#4b9fa2")
-            setSmallIcon(notificon)
+            setSmallIcon(R.drawable.notificon)
             setShowWhen(false)
             setContentTitle(getString(R.string.notif_title))
             setContentText(getString(R.string.notif_msg))

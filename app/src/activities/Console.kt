@@ -1,4 +1,4 @@
-package ro.uaic.info.ipfs
+package activities
 
 import adapters.ResourcesRecyclerAdapter
 import android.Manifest
@@ -21,11 +21,16 @@ import android.text.InputType
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.PopupMenu
+import application.async
+import application.clipboard
+import application.ipfs
 import io.ipfs.api.Peer
 import io.ipfs.multiaddr.MultiAddress
 import kotlinx.android.synthetic.main.activity_console.*
 import models.IIpfsResource
 import org.jetbrains.anko.*
+import ro.uaic.info.ipfs.R
+import services.ipfsDaemon
 import java.util.function.Consumer
 import java.util.stream.Collectors
 

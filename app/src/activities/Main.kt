@@ -1,4 +1,4 @@
-package ro.uaic.info.ipfs
+package activities
 
 import android.Manifest.permission.*
 import android.content.Intent
@@ -14,6 +14,8 @@ import com.tbruyelle.rxpermissions2.RxPermissions
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.defaultSharedPreferences
 import org.ligi.tracedroid.sending.TraceDroidEmailSender
+import ro.uaic.info.ipfs.R
+import services.ipfsDaemon
 import utils.Constants
 import utils.DialogUtils
 

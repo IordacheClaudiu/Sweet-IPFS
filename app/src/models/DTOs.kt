@@ -1,4 +1,4 @@
-package models
+package models;
 
 import android.location.Location
 import io.ipfs.multiaddr.MultiAddress

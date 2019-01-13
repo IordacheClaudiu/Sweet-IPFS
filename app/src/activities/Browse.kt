@@ -1,4 +1,4 @@
-package ro.uaic.info.ipfs
+package activities
 
 import android.app.AlertDialog
 import android.content.Intent
@@ -15,6 +15,9 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import kotlinx.android.synthetic.main.activity_browse.*
+import ro.uaic.info.ipfs.R
+import services.ipfsDaemon
+import application.*
 
 class BrowseActivity : AppCompatActivity() {
 

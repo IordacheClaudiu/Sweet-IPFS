@@ -1,4 +1,4 @@
-package ro.uaic.info.ipfs
+package activities
 
 import android.app.AlertDialog
 import android.content.Intent
@@ -7,10 +7,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.support.v7.app.AppCompatActivity
+import application.*
 import io.ipfs.api.MerkleNode
 import io.ipfs.api.NamedStreamable.FileWrapper
 import io.ipfs.multihash.Multihash
 import kotlinx.android.synthetic.main.activity_share.*
+import ro.uaic.info.ipfs.R
+import services.ipfsDaemon
 import java.io.File
 import java.io.InputStream
 
@@ -95,7 +98,7 @@ class ShareActivity : AppCompatActivity() {
     private fun File.askWrap() = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_wrap))
         val wrapper = FileWrapper(this@askWrap)
-        setPositiveButton(getString(R.string.yes)) { _, _ ->
+        setPositiveButton(getString(R.string.yes)) { _ , _ ->
             add {
                 var i: List<MerkleNode>? = null
                 while (i == null) try {
