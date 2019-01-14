@@ -8,7 +8,7 @@
     android:focusableInTouchMode="true"
     android:focusable="true"
     android:clickable="true"
-    tools:context=".ShareActivity">
+    tools:context="activities.ShareActivity">
 
     <TextView
         android:id="@+id/hashtxt"

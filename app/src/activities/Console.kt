@@ -32,6 +32,7 @@ import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
+import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import utils.ResourceSender
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -47,13 +48,16 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
     private lateinit var adapter: ResourcesRecyclerAdapter
     private val notImplemented = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
     private var resourceSender: ResourceSender? = null
+    private val locationProvider = LocationManager.GPS_PROVIDER
     private var lastKnownLocation: Location? = null
     private val locationListener = object : LocationListener {
 
         override fun onLocationChanged(location: Location) {
             debug { location }
             lastKnownLocation = location
-            resourceSender?.send(lastKnownLocation !!)
+            if (lastKnownLocation != null) {
+                resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
+            }
         }
 
         override fun onStatusChanged(provider: String , status: Int , extras: Bundle) {
@@ -142,9 +146,9 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                         MY_PERMISSIONS_REQUEST_FINE_LOCATION)
             }
         } else {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER ,
-                    0 ,
-                    0f ,
+            locationManager.requestLocationUpdates(locationProvider ,
+                    1000 ,
+                    1f ,
                     locationListener)
         }
     }
@@ -152,7 +156,6 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
     private fun setupCurrentPeer() {
         doAsync {
             val id = ipfs.id()
-            print(id)
             uiThread {
                 var multiAddress: MultiAddress? = null
                 if (id.containsKey("Addresses")) {
@@ -162,7 +165,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                 if (multiAddress != null) {
                     resourceSender = ResourceSender(ctx , PeerDTO(multiAddress) , ipfs)
                     if (lastKnownLocation != null) {
-                        resourceSender !!.send(lastKnownLocation !!)
+                        resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
                     }
                 }
             }
@@ -426,6 +429,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                                 Intent(ctx , ShareActivity::class.java).apply {
                                     type = "text/plain"
                                     putExtra(EXTRA_TEXT , txt.text.toString())
+                                    startActivity(this)
                                 }
                             }
                             setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
