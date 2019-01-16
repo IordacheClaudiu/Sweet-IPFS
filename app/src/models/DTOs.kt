@@ -2,31 +2,17 @@ package models;
 
 import android.location.Location
 import io.ipfs.multiaddr.MultiAddress
-import io.ipfs.multihash.Multihash
 
 interface IIpfsResource {
-    val username: String
     val peer: PeerDTO
-    val device: String
-    val os: String
 }
 
-data class PeerDTO(val multiAddress: MultiAddress)
+data class PeerDTO(val username: String , val device: String , val os: String , val addresses: List<String>)
 
-data class IpfsResource(override val username: String ,
-                        override val device: String ,
-                        override val peer: PeerDTO ,
-                        override val os: String) : IIpfsResource
+data class FileDTO(val filename: String , val mimeType: String? , val hash: String)
 
-data class IpfsLocationResource(override val username: String ,
-                                override val device: String ,
-                                override val peer: PeerDTO ,
-                                override val os: String ,
+data class IpfsLocationResource(override val peer: PeerDTO ,
                                 val location: Location) : IIpfsResource
 
-data class IpfsDataResource(override val username: String ,
-                            override val device: String ,
-                            override val peer: PeerDTO ,
-                            override val os: String ,
-                            val filename: String ,
-                            val file: MultiAddress) : IIpfsResource
+data class IpfsDataResource(override val peer: PeerDTO ,
+                            val file: FileDTO) : IIpfsResource

@@ -33,6 +33,7 @@ import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
+import utils.Constants
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import utils.ResourceSender
 import java.util.function.Consumer
@@ -48,6 +49,20 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var adapter: ResourcesRecyclerAdapter
+    private val username by lazy {
+        defaultSharedPreferences.getString(Constants.SHARED_PREF_USERNAME , null)
+    }
+    private val device by lazy {
+        val manufacturer = Build.MANUFACTURER
+        val model = Build.MODEL
+        listOf(manufacturer , model).joinToString(",")
+    }
+
+    private val os by lazy {
+        val version = Build.VERSION.SDK_INT
+        val versionRelease = Build.VERSION.RELEASE
+        listOf(version , versionRelease).joinToString(",")
+    }
     private val notImplemented = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
     private var resourceSender: ResourceSender? = null
     private val locationProvider = LocationManager.GPS_PROVIDER
@@ -91,13 +106,15 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         when (req) {
             IMAGE_CAPTURE_REQUEST_CODE -> {
                 rdata?.extras?.also {
+                    info { "Image taken" }
                     val imageBitmap = it.get("data") as Bitmap
-                    info { imageBitmap.byteCount }
+                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , imageBitmap , null)
                 }
             }
             READ_DOCUMENT_REQUEST_CODE -> {
                 rdata?.data?.also { uri ->
                     info { "Uri: $uri" }
+                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , uri , null)
                 }
             }
         }
@@ -172,17 +189,17 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         doAsync {
             val id = ipfs.id()
             uiThread {
-                var multiAddress: MultiAddress? = null
                 if (id.containsKey("Addresses")) {
                     val list = id["Addresses"] as List<String>
-                    multiAddress = MultiAddress(list[1])
-                }
-                if (multiAddress != null) {
-                    resourceSender = ResourceSender(ctx , PeerDTO(multiAddress) , ipfs)
+                    val peer = PeerDTO(username , device , os , list)
+                    resourceSender = ResourceSender(ctx , peer , ipfs)
                     if (lastKnownLocation != null) {
                         resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
                     }
+                } else {
+                    error { "Peer doesn't have addresses" }
                 }
+
             }
         }
     }
