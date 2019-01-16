@@ -42,13 +42,17 @@ import java.util.stream.Collectors
 class ConsoleActivity : AppCompatActivity() , AnkoLogger {
 
     private val ctx = this as Context
+
+    // UI
+    private lateinit var linearLayoutManager: LinearLayoutManager
+    private lateinit var adapter: ResourcesRecyclerAdapter
+
+    // Request Codes
     private val FINE_LOCATION_REQUEST_CODE = 100
     private val READ_DOCUMENT_REQUEST_CODE = 101
     private val IMAGE_CAPTURE_REQUEST_CODE = 102
 
-    private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
-    private lateinit var linearLayoutManager: LinearLayoutManager
-    private lateinit var adapter: ResourcesRecyclerAdapter
+    // IPFS
     private val username by lazy {
         defaultSharedPreferences.getString(Constants.SHARED_PREF_USERNAME , null)
     }
@@ -57,7 +61,6 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         val model = Build.MODEL
         listOf(manufacturer , model).joinToString(",")
     }
-
     private val os by lazy {
         val version = Build.VERSION.SDK_INT
         val versionRelease = Build.VERSION.RELEASE
@@ -65,6 +68,9 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
     }
     private val notImplemented = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
     private var resourceSender: ResourceSender? = null
+
+    // Location
+    private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     private val locationProvider = LocationManager.GPS_PROVIDER
     private var lastKnownLocation: Location? = null
     private val locationListener = object : LocationListener {
