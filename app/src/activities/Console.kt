@@ -7,12 +7,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.*
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
-import android.support.design.widget.Snackbar
+import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
@@ -41,7 +42,9 @@ import java.util.stream.Collectors
 class ConsoleActivity : AppCompatActivity() , AnkoLogger {
 
     private val ctx = this as Context
-    private val MY_PERMISSIONS_REQUEST_FINE_LOCATION = 100
+    private val FINE_LOCATION_REQUEST_CODE = 100
+    private val READ_DOCUMENT_REQUEST_CODE = 101
+    private val IMAGE_CAPTURE_REQUEST_CODE = 102
 
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     private lateinit var linearLayoutManager: LinearLayoutManager
@@ -53,7 +56,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
     private val locationListener = object : LocationListener {
 
         override fun onLocationChanged(location: Location) {
-            debug { location }
+            info { location }
             lastKnownLocation = location
             if (lastKnownLocation != null) {
                 resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
@@ -61,15 +64,15 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         }
 
         override fun onStatusChanged(provider: String , status: Int , extras: Bundle) {
-            debug { "onStatusChanged: $status" }
+            info { "onStatusChanged: $status" }
         }
 
         override fun onProviderEnabled(provider: String) {
-            debug { "onProviderEnabled: $provider" }
+            info { "onProviderEnabled: $provider" }
         }
 
         override fun onProviderDisabled(provider: String) {
-            debug { "onProviderDisabled: $provider" }
+            info { "onProviderDisabled: $provider" }
         }
     }
 
@@ -80,12 +83,25 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         setupRecyclerView()
         setupActionBtn(notImplemented)
         setupConfigBtn()
-        setupFloatingButton()
+        setupFloatingBtns()
     }
 
     override fun onActivityResult(req: Int , res: Int , rdata: Intent?) {
         super.onActivityResult(req , res , rdata)
         if (res != RESULT_OK) return
+        when (req) {
+            IMAGE_CAPTURE_REQUEST_CODE -> {
+                rdata?.extras?.also {
+                    val imageBitmap = it.get("data") as Bitmap
+                    info { imageBitmap.byteCount }
+                }
+            }
+            READ_DOCUMENT_REQUEST_CODE -> {
+                rdata?.data?.also { uri ->
+                    info { "Uri: $uri" }
+                }
+            }
+        }
         when (req) {
             1 -> Intent(ctx , ShareActivity::class.java).apply {
                 data = rdata?.data ?: return
@@ -98,7 +114,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
     override fun onRequestPermissionsResult(requestCode: Int ,
                                             permissions: Array<String> , grantResults: IntArray) {
         when (requestCode) {
-            MY_PERMISSIONS_REQUEST_FINE_LOCATION -> {
+            FINE_LOCATION_REQUEST_CODE -> {
                 // If request is cancelled, the result arrays are empty.
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     try {
@@ -143,7 +159,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
             } else {
                 ActivityCompat.requestPermissions(this ,
                         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION) ,
-                        MY_PERMISSIONS_REQUEST_FINE_LOCATION)
+                        FINE_LOCATION_REQUEST_CODE)
             }
         } else {
             locationManager.requestLocationUpdates(locationProvider ,
@@ -216,9 +232,9 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                                 setMessage(representation)
                                 setNeutralButton(getString(R.string.close)) { _ , _ -> }
                             }.show()
-                            debug { "Swarm Peers success." }
+                            info { "Swarm Peers success." }
                         } , {
-                            debug { "Swarm Peers error." }
+                            info { "Swarm Peers error." }
                         }
                         );true
                     }
@@ -263,9 +279,9 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                                     setMessage(representation)
                                     setNeutralButton(getString(R.string.close)) { _ , _ -> }
                                 }.show()
-                                debug { "Bootstrap list success." }
+                                info { "Bootstrap list success." }
                             } , {
-                                debug { "Bootstrap list error." }
+                                info { "Bootstrap list error." }
                             }); true
                         }
                         add(getString(R.string.menu_bootstrap_add_node)).setOnMenuItemClickListener {
@@ -284,14 +300,14 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                                     try {
                                         nodeAddress = MultiAddress(txtInput)
                                     } catch (e: IllegalStateException) {
-                                        debug { "Bootstrap add node error:" + e.localizedMessage }
+                                        info { "Bootstrap add node error:" + e.localizedMessage }
                                         return@setPositiveButton
                                     }
                                     async(60 , { ipfs.bootstrap.add(nodeAddress) } ,
                                             {
-                                                debug { "Bootstrap add node success." }
+                                                info { "Bootstrap add node success." }
                                             } , {
-                                        debug { "Bootstrap add node error." }
+                                        info { "Bootstrap add node error." }
                                     })
                                 }
                                 setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
@@ -315,9 +331,9 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                                     setMessage(text)
                                     setNeutralButton(getString(R.string.close)) { _ , _ -> }
                                 }.show()
-                                debug { "PubSub list rooms success." }
+                                info { "PubSub list rooms success." }
                             } , {
-                                debug { "PubSub list rooms error." }
+                                info { "PubSub list rooms error." }
                             }); true
                         }
                         add(getString(R.string.menu_pubsub_join_room)).setOnMenuItemClickListener {
@@ -334,9 +350,9 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                                     }
                                     async(60 , { ipfs.pubsub.sub(room) } ,
                                             {
-                                                debug { "PubSub join room succedeed." }
+                                                info { "PubSub join room succedeed." }
                                             } , {
-                                        debug { "PubSub join room error." }
+                                        info { "PubSub join room error." }
                                     })
                                 }
                                 setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
@@ -364,8 +380,8 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                                     if (room.isNotBlank() && message.isNotBlank()) {
                                         async(60 ,
                                                 { ipfs.pubsub.pub(room , message) } ,
-                                                { debug { "PubSub post to room $room succedeed." } } ,
-                                                { debug { "PubSub post room ${room} failed.\")" } }
+                                                { info { "PubSub post to room $room succedeed." } } ,
+                                                { info { "PubSub post room ${room} failed.\")" } }
                                         )
                                     } else {
 
@@ -464,11 +480,27 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         }
     }
 
-    private fun setupFloatingButton() {
-        floatingBtn.setOnClickListener {
-            Snackbar.make(it , "Here's a Snackbar" , Snackbar.LENGTH_LONG)
-                    .setAction("Action" , null)
-                    .show()
+    private fun setupFloatingBtns() {
+        addFileBtn.setOnClickListener {
+            floatingBtnMenu.close(true)
+
+            Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+                startActivityForResult(this , READ_DOCUMENT_REQUEST_CODE)
+            }
         }
+        addPhotoBtn.setOnClickListener {
+            floatingBtnMenu.close(true)
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+                takePictureIntent.resolveActivity(packageManager)?.also {
+                    startActivityForResult(takePictureIntent , IMAGE_CAPTURE_REQUEST_CODE)
+                }
+            }
+        }
+        addTextBtn.setOnClickListener {
+            floatingBtnMenu.close(true)
+        }
+
     }
 }
