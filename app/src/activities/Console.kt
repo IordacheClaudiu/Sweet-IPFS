@@ -38,7 +38,6 @@ import utils.ResourceSender
 import java.util.function.Consumer
 import java.util.stream.Collectors
 
-
 class ConsoleActivity : AppCompatActivity() , AnkoLogger {
 
     private val ctx = this as Context
@@ -418,40 +417,6 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         actionbtn.setOnClickListener { btn ->
             PopupMenu(ctx , btn).apply {
                 menu.apply {
-                    add(getString(R.string.menu_add_file)).setOnMenuItemClickListener {
-                        Intent(ACTION_GET_CONTENT).apply {
-                            type = "*/*"
-                            startActivityForResult(createChooser(this , getString(R.string.title_add_file)) , 1)
-                        }; true
-                    }
-
-                    add(getString(R.string.menu_add_folder)).setOnMenuItemClickListener {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                            Intent(ACTION_OPEN_DOCUMENT_TREE).apply {
-                                type = "*/*"
-                                startActivityForResult(createChooser(this , getString(R.string.title_add_folder)) , 2)
-                            }
-                        }; true
-                    }
-
-                    add(getString(R.string.menu_add_text)).setOnMenuItemClickListener {
-                        AlertDialog.Builder(ctx).apply {
-                            setTitle(getString(R.string.title_add_text))
-                            val txt = EditText(ctx).apply {
-                                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-                                setView(this)
-                            }
-                            setPositiveButton(getString(R.string.apply)) { _ , _ ->
-                                Intent(ctx , ShareActivity::class.java).apply {
-                                    type = "text/plain"
-                                    putExtra(EXTRA_TEXT , txt.text.toString())
-                                    startActivity(this)
-                                }
-                            }
-                            setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
-                        }.show(); true
-                    }
-
                     add(getString(R.string.menu_garbage_collect)).setOnMenuItemClickListener {
                         true.also {
                             Thread {
@@ -500,6 +465,21 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         }
         addTextBtn.setOnClickListener {
             floatingBtnMenu.close(true)
+            AlertDialog.Builder(ctx).apply {
+                setTitle(getString(R.string.title_add_text))
+                val txt = EditText(ctx).apply {
+                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    setView(this)
+                }
+                setPositiveButton(getString(R.string.apply)) { _ , _ ->
+                    Intent(ctx , ShareActivity::class.java).apply {
+                        type = "text/plain"
+                        putExtra(EXTRA_TEXT , txt.text.toString())
+                        startActivity(this)
+                    }
+                }
+                setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
+            }.show()
         }
 
     }
