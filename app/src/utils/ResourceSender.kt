@@ -81,6 +81,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
         doAsync {
             var i: List<MerkleNode>? = null
             while (i == null) {
+                //TODO: pin content
                 i = ipfs.add(wrapper , false)
             }
             callback(i.last().hash)

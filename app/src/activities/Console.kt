@@ -35,6 +35,7 @@ import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
 import utils.Constants
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
+import utils.ResourceReceiver
 import utils.ResourceSender
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -68,6 +69,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
     }
     private val notImplemented = { AlertDialog.Builder(ctx).setMessage("This feature is not yet implemented. Sorry").show(); true }
     private var resourceSender: ResourceSender? = null
+    private var resourceReceiver: ResourceReceiver? = null
 
     // Location
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
@@ -158,6 +160,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
 
     override fun onDestroy() {
         super.onDestroy()
+        resourceReceiver?.unsubscribeFrom(IPFS_PUB_SUB_CHANNEL)
         locationManager.removeUpdates(locationListener)
     }
 
@@ -202,6 +205,12 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                     if (lastKnownLocation != null) {
                         resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
                     }
+                    resourceReceiver = ResourceReceiver(ctx , ipfs)
+                    resourceReceiver?.subscribeTo(IPFS_PUB_SUB_CHANNEL , {
+                        print(it)
+                    } , {
+                        print(it)
+                    })
                 } else {
                     error { "Peer doesn't have addresses" }
                 }
