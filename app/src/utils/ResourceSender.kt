@@ -10,10 +10,6 @@ import android.provider.OpenableColumns
 import io.ipfs.api.MerkleNode
 import io.ipfs.api.NamedStreamable
 import io.ipfs.multihash.Multihash
-import models.FileDTO
-import models.IpfsDataResource
-import models.IpfsLocationResource
-import models.PeerDTO
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import java.io.File
@@ -21,6 +17,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import android.webkit.MimeTypeMap
 import com.google.gson.GsonBuilder
+import models.*
 import java.util.*
 
 class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) {
@@ -30,6 +27,15 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
         builder.registerTypeAdapter(Date::class.java , DateDeserializer())
         builder.registerTypeAdapter(Date::class.java , DateSerializer())
         builder.create()
+    }
+
+    fun send(channel: String , text: String , callback: ((Multihash) -> Unit)?) {
+        val textResource = IpfsTextResource(UUID.randomUUID(),peer, DateUtils.GMT.time(), text)
+        val json = gson.toJson(textResource)
+        val jsonTempFile = json.tempFile
+        if (jsonTempFile != null) {
+            sendJsonFile(channel , jsonTempFile , callback)
+        }
     }
 
     fun send(channel: String , location: Location , callback: ((Multihash) -> Unit)?) {

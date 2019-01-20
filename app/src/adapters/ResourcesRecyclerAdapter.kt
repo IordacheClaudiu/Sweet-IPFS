@@ -8,17 +8,20 @@ import android.view.ViewGroup
 import io.ipfs.api.Peer
 import kotlinx.android.synthetic.main.reciclerview_peer_row.view.*
 import models.IIpfsResource
+import models.IpfsResourceType
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import ro.uaic.info.ipfs.R
 
-class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>)  : RecyclerView.Adapter<ResourcesRecyclerAdapter.ResourcesHolder>()  {
+class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>) : RecyclerView.Adapter<ResourcesRecyclerAdapter.ResourcesHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup , viewType: Int): ResourcesRecyclerAdapter.ResourcesHolder {
         val inflatedView = LayoutInflater.from(parent.context)
-                .inflate(R.layout.reciclerview_peer_row, parent, false) as View
+                .inflate(R.layout.reciclerview_peer_row , parent , false) as View
         return ResourcesHolder(inflatedView)
     }
 
     override fun getItemCount(): Int {
-       return resources.count()
+        return resources.count()
     }
 
     override fun onBindViewHolder(holder: ResourcesRecyclerAdapter.ResourcesHolder , position: Int) {
@@ -26,14 +29,17 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
         holder.bindResource(resource)
     }
 
+    fun add(newResource: IIpfsResource) {
+        add(listOf(newResource))
+    }
+
     fun add(newResources: List<IIpfsResource>) {
         resources.addAll(newResources)
-        notifyDataSetChanged()
+        notifyItemInserted(resources.count() - 1)
     }
 
 
-    class ResourcesHolder(v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
-        private val LOG_TAG = ResourcesHolder::class.java.name
+    class ResourcesHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
 
         private var view: View = v
         private var resource: IIpfsResource? = null
@@ -43,16 +49,22 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
         }
 
         override fun onClick(v: View) {
-            Log.d(LOG_TAG, "CLICK!")
-        }
-
-        companion object {
-            private val PHOTO_KEY = "PHOTO"
+            info { "CLICK!" }
         }
 
         fun bindResource(resource: IIpfsResource) {
             this.resource = resource
-            view.itemPeer.text = "ceva"
+            when (resource.type) {
+                IpfsResourceType.LOCATION -> {
+                    view.itemPeer.text = "Location:"
+                }
+                IpfsResourceType.BINARY -> {
+                    view.itemPeer.text = "Binary:"
+                }
+                IpfsResourceType.TEXT -> {
+                    view.itemPeer.text = "Text:"
+                }
+            }
         }
 
     }

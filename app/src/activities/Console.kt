@@ -206,10 +206,10 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                         resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
                     }
                     resourceReceiver = ResourceReceiver(ctx , ipfs)
-                    resourceReceiver?.subscribeTo(IPFS_PUB_SUB_CHANNEL , {
-                        print(it)
-                    } , {
-                        print(it)
+                    resourceReceiver?.subscribeTo(IPFS_PUB_SUB_CHANNEL , { resource ->
+                        adapter.add(resource)
+                    } , { ex ->
+                        error { ex }
                     })
                 } else {
                     error { "Peer doesn't have addresses" }
@@ -504,11 +504,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                     setView(this)
                 }
                 setPositiveButton(getString(R.string.apply)) { _ , _ ->
-                    Intent(ctx , ShareActivity::class.java).apply {
-                        type = "text/plain"
-                        putExtra(EXTRA_TEXT , txt.text.toString())
-                        startActivity(this)
-                    }
+                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , txt.text.toString() , null)
                 }
                 setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
             }.show()

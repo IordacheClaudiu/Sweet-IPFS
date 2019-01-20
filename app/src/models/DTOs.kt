@@ -4,7 +4,7 @@ import android.location.Location
 import java.util.*
 
 enum class IpfsResourceType {
-    LOCATION, BINARY
+    LOCATION , TEXT , BINARY
 }
 
 interface IIpfsResource {
@@ -18,16 +18,23 @@ data class PeerDTO(val username: String , val device: String , val os: String , 
 
 data class FileDTO(val filename: String , val mimeType: String? , val hash: String)
 
-data class IpfsLocationResource(override val id: UUID,
+data class IpfsTextResource(override val id: UUID ,
+                            override val peer: PeerDTO ,
+                            override val timestamp: Date ,
+                            val text: String) : IIpfsResource {
+    override val type = IpfsResourceType.TEXT
+}
+
+data class IpfsLocationResource(override val id: UUID ,
                                 override val peer: PeerDTO ,
                                 override val timestamp: Date ,
                                 val location: Location) : IIpfsResource {
-   override val type = IpfsResourceType.LOCATION
+    override val type = IpfsResourceType.LOCATION
 }
 
-data class IpfsDataResource(override val id: UUID,
+data class IpfsDataResource(override val id: UUID ,
                             override val peer: PeerDTO ,
                             override val timestamp: Date ,
                             val file: FileDTO) : IIpfsResource {
-    override  val type = IpfsResourceType.BINARY
+    override val type = IpfsResourceType.BINARY
 }

@@ -5,10 +5,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import io.ipfs.api.IPFS
 import io.ipfs.multihash.Multihash
-import models.IIpfsResource
-import models.IpfsDataResource
-import models.IpfsLocationResource
-import models.IpfsResourceType
+import models.*
 import org.jetbrains.anko.*
 import utils.Constants.IPFS_RESOURCE_TYPE_KEY
 import java.io.IOException
@@ -50,11 +47,21 @@ class ResourceReceiver(val context: Context , val ipfs: IPFS) : AnkoLogger {
                                 when (IpfsResourceType.valueOf(type)) {
                                     IpfsResourceType.LOCATION -> {
                                         val location = gson.fromJson<IpfsLocationResource>(json , IpfsLocationResource::class.java)
-                                        onSuccess(location)
+                                        uiThread {
+                                            onSuccess(location)
+                                        }
                                     }
                                     IpfsResourceType.BINARY -> {
                                         val binary = gson.fromJson<IpfsDataResource>(json , IpfsDataResource::class.java)
-                                        onSuccess(binary)
+                                        uiThread {
+                                            onSuccess(binary)
+                                        }
+                                    }
+                                    IpfsResourceType.TEXT -> {
+                                        val text = gson.fromJson<IpfsTextResource>(json , IpfsTextResource::class.java)
+                                        uiThread {
+                                            onSuccess(text)
+                                        }
                                     }
                                 }
                             }
