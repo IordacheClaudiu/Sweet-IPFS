@@ -51,6 +51,7 @@ dependencies {
     implementation 'com.jakewharton.rxbinding2:rxbinding:2.1.1'
     implementation "org.jetbrains.anko:anko-common:$anko_version"
     implementation "com.github.clans:fab:1.6.2"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
 
     // IPFS - API
     implementation "com.github.ipfs:java-ipfs-api:v$java_ipfs_api"

@@ -6,9 +6,7 @@ import android.graphics.Bitmap
 import android.location.Location
 import android.net.Uri
 import io.ipfs.api.IPFS
-import android.os.Build
 import android.provider.OpenableColumns
-import com.google.gson.Gson
 import io.ipfs.api.MerkleNode
 import io.ipfs.api.NamedStreamable
 import io.ipfs.multihash.Multihash
@@ -22,15 +20,20 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import android.webkit.MimeTypeMap
+import com.google.gson.GsonBuilder
+import java.util.*
 
 class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) {
 
     private val gson by lazy {
-        Gson()
+        val builder = GsonBuilder()
+        builder.registerTypeAdapter(Date::class.java , DateDeserializer())
+        builder.registerTypeAdapter(Date::class.java , DateSerializer())
+        builder.create()
     }
 
     fun send(channel: String , location: Location , callback: ((Multihash) -> Unit)?) {
-        val locationResource = IpfsLocationResource(peer , location)
+        val locationResource = IpfsLocationResource(UUID.randomUUID(), peer, DateUtils.GMT.time(), location)
         val json = gson.toJson(locationResource)
         val jsonTempFile = json.tempFile
         if (jsonTempFile != null) {
@@ -55,7 +58,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     private fun storeAndSendResourceFile(channel: String , file: File , callback: ((Multihash) -> Unit)?) {
         addFile(file) {
             val fileDTO = FileDTO(file.name , Uri.fromFile(file).mimeType , it.toString())
-            val dataResource = IpfsDataResource(peer , fileDTO)
+            val dataResource = IpfsDataResource(UUID.randomUUID(), peer , DateUtils.GMT.time(), fileDTO)
             val json = gson.toJson(dataResource)
             val jsonTempFile = json.tempFile
             if (jsonTempFile != null) {

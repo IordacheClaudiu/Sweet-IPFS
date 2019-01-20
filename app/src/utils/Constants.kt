@@ -5,7 +5,6 @@ object Constants {
     const val IPFS_PUB_SUB_CHANNEL = "calamities"
 
     const val IPFS_PUB_SUB_DATA = "data"
-    const val IPFS_PUB_SUB_TOPIC_IDS = "topicIDs"
-    const val IPFS_PUB_SUB_FROM = "from"
-    const val IPFS_PUB_SUB_SEQNO = "seqno"
+
+    const val IPFS_RESOURCE_TYPE_KEY = "type"
 }
