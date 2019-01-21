@@ -1,32 +1,59 @@
-package adapters;
+package adapters
 
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import io.ipfs.api.Peer
-import kotlinx.android.synthetic.main.reciclerview_peer_row.view.*
-import models.IIpfsResource
-import models.IpfsResourceType
+import kotlinx.android.synthetic.main.reciclerview_text_row.view.*
+import models.*
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
 import ro.uaic.info.ipfs.R
 
-class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>) : RecyclerView.Adapter<ResourcesRecyclerAdapter.ResourcesHolder>() {
-    override fun onCreateViewHolder(parent: ViewGroup , viewType: Int): ResourcesRecyclerAdapter.ResourcesHolder {
-        val inflatedView = LayoutInflater.from(parent.context)
-                .inflate(R.layout.reciclerview_peer_row , parent , false) as View
-        return ResourcesHolder(inflatedView)
+class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    override fun onCreateViewHolder(parent: ViewGroup , viewType: Int): RecyclerView.ViewHolder {
+        when (viewType) {
+            IpfsResourceType.LOCATION.ordinal -> {
+                val inflatedView = LayoutInflater.from(parent.context)
+                        .inflate(R.layout.reciclerview_location_row , parent , false) as View
+                return LocationResourceHolder(inflatedView)
+            }
+            IpfsResourceType.BINARY.ordinal -> {
+                val inflatedView = LayoutInflater.from(parent.context)
+                        .inflate(R.layout.reciclerview_location_row , parent , false) as View
+                return BinaryResourceHolder(inflatedView)
+            }
+            else -> {
+                val inflatedView = LayoutInflater.from(parent.context)
+                        .inflate(R.layout.reciclerview_text_row , parent , false) as View
+                return TextResourceHolder(inflatedView)
+            }
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder , position: Int) {
+        val resource = resources[position]
+        when (resource.type) {
+            IpfsResourceType.TEXT -> {
+                (holder as TextResourceHolder).bindResource(resource as IpfsTextResource)
+            }
+            IpfsResourceType.LOCATION -> {
+                (holder as LocationResourceHolder).bindResource(resource as IpfsLocationResource)
+            }
+            IpfsResourceType.BINARY -> {
+                (holder as BinaryResourceHolder).bindResource(resource as IpfsDataResource)
+            }
+        }
     }
 
     override fun getItemCount(): Int {
-        return resources.count()
+        return resources.size
     }
 
-    override fun onBindViewHolder(holder: ResourcesRecyclerAdapter.ResourcesHolder , position: Int) {
+    override fun getItemViewType(position: Int): Int {
         val resource = resources[position]
-        holder.bindResource(resource)
+        return resource.type.ordinal
     }
 
     fun add(newResource: IIpfsResource) {
@@ -39,10 +66,10 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
     }
 
 
-    class ResourcesHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
+    class TextResourceHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
 
         private var view: View = v
-        private var resource: IIpfsResource? = null
+        private var textResource: IpfsTextResource? = null
 
         init {
             v.setOnClickListener(this)
@@ -52,19 +79,49 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
             info { "CLICK!" }
         }
 
-        fun bindResource(resource: IIpfsResource) {
-            this.resource = resource
-            when (resource.type) {
-                IpfsResourceType.LOCATION -> {
-                    view.itemPeer.text = "Location:"
-                }
-                IpfsResourceType.BINARY -> {
-                    view.itemPeer.text = "Binary:"
-                }
-                IpfsResourceType.TEXT -> {
-                    view.itemPeer.text = "Text:"
-                }
-            }
+        fun bindResource(resource: IpfsTextResource) {
+            this.textResource = resource
+            view.type.text = resource.text
+        }
+
+    }
+
+    class LocationResourceHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
+
+        private var view: View = v
+        private var locationResource: IpfsLocationResource? = null
+
+        init {
+            v.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+            info { "CLICK!" }
+        }
+
+        fun bindResource(resource: IpfsLocationResource) {
+            this.locationResource = resource
+            view.type.text = "Location"
+        }
+
+    }
+
+    class BinaryResourceHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
+
+        private var view: View = v
+        private var binaryResource: IpfsDataResource? = null
+
+        init {
+            v.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+            info { "CLICK!" }
+        }
+
+        fun bindResource(resource: IpfsDataResource) {
+            this.binaryResource = resource
+            view.type.text = "Binary"
         }
 
     }
