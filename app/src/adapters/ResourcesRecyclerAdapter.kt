@@ -84,6 +84,7 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
             view.peer_name.text = textResource.peer.username
             view.peer_system.text = textResource.peer.os + " " + textResource.peer.device
             view.peer_message.text = textResource.text
+            view.timestamp.text = "1d ago"
         }
 
     }
