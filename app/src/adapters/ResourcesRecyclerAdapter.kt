@@ -69,7 +69,7 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
     class TextResourceHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
 
         private var view: View = v
-        private var textResource: IpfsTextResource? = null
+        private lateinit var textResource: IpfsTextResource
 
         init {
             v.setOnClickListener(this)
@@ -81,7 +81,9 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
 
         fun bindResource(resource: IpfsTextResource) {
             this.textResource = resource
-            view.type.text = resource.text
+            view.peer_name.text = textResource.peer.username
+            view.peer_system.text = textResource.peer.os + " " + textResource.peer.device
+            view.peer_message.text = textResource.text
         }
 
     }
@@ -101,7 +103,7 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
 
         fun bindResource(resource: IpfsLocationResource) {
             this.locationResource = resource
-            view.type.text = "Location"
+//            view.type.text = "Location"
         }
 
     }
@@ -121,7 +123,7 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
 
         fun bindResource(resource: IpfsDataResource) {
             this.binaryResource = resource
-            view.type.text = "Binary"
+//            view.type.text = "Binary"
         }
 
     }

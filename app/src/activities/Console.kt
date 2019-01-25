@@ -29,6 +29,7 @@ import io.ipfs.api.Peer
 import io.ipfs.multiaddr.MultiAddress
 import kotlinx.android.synthetic.main.activity_console.*
 import models.IIpfsResource
+import models.IpfsLocationResource
 import models.IpfsTextResource
 import models.PeerDTO
 import org.jetbrains.anko.*
@@ -36,6 +37,7 @@ import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
 import utils.Constants
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
+import utils.DateUtils
 import utils.ResourceReceiver
 import utils.ResourceSender
 import java.util.*
@@ -171,11 +173,14 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         recyclerView.layoutManager = linearLayoutManager
         val resources: MutableList<IIpfsResource> = mutableListOf()
         adapter = ResourcesRecyclerAdapter(resources)
-        val peer = PeerDTO("ceva","Galaxy", "Android", listOf("Iasi"))
-        val res = IpfsTextResource(UUID.randomUUID(), peer , Date(), "Dummy")
-        val res2 = IpfsTextResource(UUID.randomUUID(), peer , Date(), "Dummy")
+        val peer = PeerDTO("Claudiu Iordache" , "Galaxy S9" , "Android 8" , listOf("Iasi"))
+        val textRes = IpfsTextResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , "Dummy")
+        val targetLocation = Location("")
+        targetLocation.longitude = 12.0
+        targetLocation.latitude = - 24.0
+        val locationRes = IpfsLocationResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , targetLocation)
 
-        adapter.add(listOf(res))
+        adapter.add(listOf(textRes , locationRes))
         recyclerView.adapter = adapter
     }
 
