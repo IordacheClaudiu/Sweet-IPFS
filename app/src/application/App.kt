@@ -21,14 +21,14 @@ class App : Application() {
 
 val Context.ctx get() = this
 
-operator fun File.get(path: String) = File(this, path)
+operator fun File.get(path: String) = File(this , path)
 
 val ipfs by lazy { IPFS("/ip4/127.0.0.1/tcp/5001") }
 
 // Create qr code
-fun qr(text: String, width: Int, height: Int) = QRCodeWriter()
-        .encode(text, BarcodeFormat.QR_CODE, width, height, mapOf(EncodeHintType.MARGIN to 0))
-        .let { MatrixToImageWriter.toBitmap(it, MatrixToImageConfig(0xFF000000.toInt(), 0x00000000)) }
+fun qr(text: String , width: Int , height: Int) = QRCodeWriter()
+        .encode(text , BarcodeFormat.QR_CODE , width , height , mapOf(EncodeHintType.MARGIN to 0))
+        .let { MatrixToImageWriter.toBitmap(it , MatrixToImageConfig(0xFF000000.toInt() , 0x00000000)) }
 
 fun chain(vararg cbs: (() -> Unit) -> Unit) {
     var last: () -> Unit = { (cbs.last()){} }
@@ -39,7 +39,7 @@ fun chain(vararg cbs: (() -> Unit) -> Unit) {
     last()
 }
 
-fun Activity.ipfsInitialized(callback: () -> Unit, error: () -> Unit) = Thread {
+fun Activity.ipfsInitialized(callback: () -> Unit , error: () -> Unit) = Thread {
     try {
         ipfs.version()
         runOnUiThread(callback)
@@ -50,10 +50,10 @@ fun Activity.ipfsInitialized(callback: () -> Unit, error: () -> Unit) = Thread {
 
 fun Activity.clipboard(text: String) {
     val clipboard = getSystemService(AppCompatActivity.CLIPBOARD_SERVICE) as ClipboardManager
-    clipboard.primaryClip = ClipData.newPlainText("text", text)
+    clipboard.primaryClip = ClipData.newPlainText("text" , text)
 }
 
-fun Activity.async(timeout: Int, runnable: () -> Any?, success: (Any) -> Unit, error: () -> Unit) = Thread {
+fun Activity.async(timeout: Int , runnable: () -> Any? , success: (Any) -> Unit , error: () -> Unit) = Thread {
     try {
         val result = runnable()
         if (result != null)
@@ -62,9 +62,9 @@ fun Activity.async(timeout: Int, runnable: () -> Any?, success: (Any) -> Unit, e
     } catch (ex: Exception) {
         runOnUiThread(error)
     }
-}.let { tasker(it, timeout, error) }
+}.let { tasker(it , timeout , error) }
 
-fun Activity.tasker(thread: Thread, timeout: Int, error: () -> Unit) = {
+fun Activity.tasker(thread: Thread , timeout: Int , error: () -> Unit) = {
     thread.start()
     val start = System.currentTimeMillis()
     while (thread.isAlive) {

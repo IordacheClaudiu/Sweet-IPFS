@@ -14,10 +14,12 @@ import android.view.MenuItem
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import application.chain
+import application.ctx
+import application.ipfsInitialized
 import kotlinx.android.synthetic.main.activity_browse.*
 import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
-import application.*
 
 class BrowseActivity : AppCompatActivity() {
 
@@ -35,10 +37,10 @@ class BrowseActivity : AppCompatActivity() {
         val uri = uri ?: return
         title = getString(R.string.browser_title)
         IPXSResource(uri).apply {
-            if (!valid)
+            if (! valid)
                 return AlertDialog.Builder(ctx).apply {
                     setTitle(getString(R.string.browser_not_ipxs))
-                    setPositiveButton(getString(R.string.close)) { _, _ -> finish() }
+                    setPositiveButton(getString(R.string.close)) { _ , _ -> finish() }
                 }.show().let { Unit }
 
             supportActionBar?.subtitle = toString()
@@ -56,7 +58,7 @@ class BrowseActivity : AppCompatActivity() {
                     setInitialScale(1)
                 }
                 webViewClient = object : WebViewClient() {
-                    override fun shouldOverrideUrlLoading(view: WebView, req: WebResourceRequest) = false.also {
+                    override fun shouldOverrideUrlLoading(view: WebView , req: WebResourceRequest) = false.also {
                         if (SDK_INT < LOLLIPOP) return true
                         IPXSResource(req.url).apply {
                             if (valid) loadUrl(toPrivate())
@@ -69,27 +71,27 @@ class BrowseActivity : AppCompatActivity() {
             ipfsInitialized(::process) {
                 AlertDialog.Builder(ctx).apply {
                     setTitle(getString(R.string.daemon_not_running))
-                    setPositiveButton(getString(R.string.start)) { d, _ ->
-                        chain(ipfsDaemon::init, ipfsDaemon::start, { d.dismiss(); process() })
+                    setPositiveButton(getString(R.string.start)) { d , _ ->
+                        chain(ipfsDaemon::init , ipfsDaemon::start , { d.dismiss(); process() })
                     }
-                    setNeutralButton(getString(R.string.close)) { _, _ -> finish() }
+                    setNeutralButton(getString(R.string.close)) { _ , _ -> finish() }
                 }.show()
             }
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.browse, menu)
+        menuInflater.inflate(R.menu.browse , menu)
         return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.show -> IPXSResource(Uri.parse(browser.url)).apply {
-                if (!valid) return@apply
+                if (! valid) return@apply
                 val hash = hash ?: return@apply
-                Intent(ctx, ShareActivity::class.java).apply {
-                    putExtra("hash", hash)
+                Intent(ctx , ShareActivity::class.java).apply {
+                    putExtra("hash" , hash)
                     action = Intent.ACTION_SEND
                     startActivity(this)
                 }
@@ -109,8 +111,8 @@ class IPXSResource(uri: Uri) {
     val valid get() = type != null && path != null
 
     private val path: String? = when (uri.scheme) {
-        "ipfs", "ipns" -> uri.schemeSpecificPart.substring(2)
-        "http", "https" -> uri.pathSegments.run { subList(1, size) }.joinToString("/")
+        "ipfs" , "ipns" -> uri.schemeSpecificPart.substring(2)
+        "http" , "https" -> uri.pathSegments.run { subList(1 , size) }.joinToString("/")
         else -> when {
             uri.path.startsWith("/ipfs/") -> uri.path.substring(6)
             uri.path.startsWith("/ipns/") -> uri.path.substring(6)
@@ -124,9 +126,9 @@ class IPXSResource(uri: Uri) {
     val hash = path?.split("/")?.get(0)
 
     val type: String? = when (uri.scheme) {
-        "ipfs", "ipns" -> uri.scheme
-        "http", "https" -> uri.pathSegments[0].let {
-            if (it in listOf("ipfs", "ipns")) it else null
+        "ipfs" , "ipns" -> uri.scheme
+        "http" , "https" -> uri.pathSegments[0].let {
+            if (it in listOf("ipfs" , "ipns")) it else null
         }
         else -> when {
             uri.path.startsWith("/ipfs/") -> "ipfs"

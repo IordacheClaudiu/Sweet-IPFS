@@ -1,7 +1,9 @@
 package org.ligi.ipfsdroid;
 
 import android.net.Uri;
+
 import org.junit.Test;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.ligi.ipfsdroid.IPXSResource.IPXSType.IPFS;
 import static org.ligi.ipfsdroid.IPXSResource.IPXSType.IPNS;

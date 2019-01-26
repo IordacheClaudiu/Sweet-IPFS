@@ -1,11 +1,11 @@
 package activities
 
-import adapters.ResourcesRecyclerAdapter
+import adapters.resources.ResourcesRecyclerAdapter
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
-import android.content.Intent.*
+import android.content.Intent.ACTION_SEND
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.location.Location
@@ -37,9 +37,9 @@ import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
 import utils.Constants
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
-import utils.DateUtils
 import utils.ResourceReceiver
 import utils.ResourceSender
+import utils.date.DateUtils
 import java.util.*
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -176,8 +176,8 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         val peer = PeerDTO("Claudiu Iordache" , "Galaxy S9" , "Android 8" , listOf("Iasi"))
         val textRes = IpfsTextResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , "Dummy")
         val targetLocation = Location("")
-        targetLocation.longitude = 12.0
-        targetLocation.latitude = - 24.0
+        targetLocation.longitude = -66.903603
+        targetLocation.latitude = 10.480594
         val locationRes = IpfsLocationResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , targetLocation)
 
         adapter.add(listOf(textRes , locationRes))

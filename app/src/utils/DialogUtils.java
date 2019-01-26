@@ -25,8 +25,8 @@ public class DialogUtils {
     }
 
     public static void showAlertDialog(int alertType, Context ctx, String title, String message, DialogInterface.OnClickListener posCallback, String... buttonNames) {
-        if ( title == null ) title = ctx.getResources().getString(R.string.app_name);
-        if ( message == null ) message = "default message";
+        if (title == null) title = ctx.getResources().getString(R.string.app_name);
+        if (message == null) message = "default message";
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
         builder.setTitle(title).setMessage(message);
@@ -43,7 +43,7 @@ public class DialogUtils {
                 break;
         }
 
-        builder.setNegativeButton(buttonNames [buttonNames.length - 1], new DialogInterface.OnClickListener() {
+        builder.setNegativeButton(buttonNames[buttonNames.length - 1], new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 dialogInterface.dismiss();

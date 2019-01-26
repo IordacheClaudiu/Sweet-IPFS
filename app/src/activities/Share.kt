@@ -20,7 +20,7 @@ import java.io.InputStream
 class ShareActivity : AppCompatActivity() {
 
     override fun onCreate(state: Bundle?) = super.onCreate(state).also {
-        if (!intent.hasExtra("hash")) check()
+        if (! intent.hasExtra("hash")) check()
         else Multihash.fromBase58(intent.getStringExtra("hash")).show()
         /*else AlertDialog.Builder(this).apply {
             setTitle(getString(R.string.share_action_not_supported))
@@ -36,10 +36,10 @@ class ShareActivity : AppCompatActivity() {
     private fun check() = ipfsInitialized(::process) {
         AlertDialog.Builder(this).apply {
             setTitle(getString(R.string.daemon_not_running))
-            setPositiveButton(getString(R.string.start)) { d, _ ->
-                chain(ipfsDaemon::init, ipfsDaemon::start, { d.dismiss(); process() })
+            setPositiveButton(getString(R.string.start)) { d , _ ->
+                chain(ipfsDaemon::init , ipfsDaemon::start , { d.dismiss(); process() })
             }
-            setNeutralButton(getString(R.string.close)) { _, _ -> finish() }
+            setNeutralButton(getString(R.string.close)) { _ , _ -> finish() }
         }.show()
     }
 
@@ -47,7 +47,7 @@ class ShareActivity : AppCompatActivity() {
     // if it could not: say that it could not with a button to close the activity
     private fun process() = intent.tempFile?.askWrap() ?: AlertDialog.Builder(this).apply {
         setTitle(getString(R.string.share_cannot_open))
-        setNeutralButton(getString(R.string.close)) { _, _ -> finish() }
+        setNeutralButton(getString(R.string.close)) { _ , _ -> finish() }
     }.show().let { Unit }
 
     // Create file from resource type
@@ -65,7 +65,7 @@ class ShareActivity : AppCompatActivity() {
 
     // Retrieve uri name
     val Uri.name: String
-        get() = contentResolver.query(this, null, null, null, null).run {
+        get() = contentResolver.query(this , null , null , null , null).run {
             val index = getColumnIndex(OpenableColumns.DISPLAY_NAME)
             moveToFirst()
             getString(index).also { close() }
@@ -84,12 +84,12 @@ class ShareActivity : AppCompatActivity() {
     // Create temp file from uri
     private val Uri.tempFile: File?
         get() =
-            inputStream.copy(File.createTempFile("temp", name, cacheDir))
+            inputStream.copy(File.createTempFile("temp" , name , cacheDir))
 
     // Create temp file from text
     private val String.tempFile: File?
         get() =
-            byteInputStream().copy(File.createTempFile("temp", ".txt", cacheDir))
+            byteInputStream().copy(File.createTempFile("temp" , ".txt" , cacheDir))
 
     // Ask if we wrap the file in a dir or not
     // try to add the file
@@ -102,28 +102,28 @@ class ShareActivity : AppCompatActivity() {
             add {
                 var i: List<MerkleNode>? = null
                 while (i == null) try {
-                    i = ipfs.add(wrapper, true)
+                    i = ipfs.add(wrapper , true)
                 } catch (ex: NullPointerException) {
                 }
                 i.last().hash
             }
         }
-        setNegativeButton(getString(R.string.no)) { _, _ ->
+        setNegativeButton(getString(R.string.no)) { _ , _ ->
             add {
                 var i: List<MerkleNode>? = null
                 while (i == null) try {
-                    i = ipfs.add(wrapper, false)
+                    i = ipfs.add(wrapper , false)
                 } catch (ex: NullPointerException) {
                 }
-                i!!.last().hash
+                i !!.last().hash
             }
         }
     }.show().let { Unit }
 
     private fun error(ex: Exception? = null) = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_error))
-        setPositiveButton(getString(R.string.report)) { _, _ -> finish() }
-        setNegativeButton(getString(R.string.close)) { _, _ -> finish() }
+        setPositiveButton(getString(R.string.report)) { _ , _ -> finish() }
+        setNegativeButton(getString(R.string.close)) { _ , _ -> finish() }
     }.show().let { Unit }
 
     // Show hash after adding it
@@ -139,13 +139,13 @@ class ShareActivity : AppCompatActivity() {
         setContentView(R.layout.activity_share)
         val hash = this@show
         val url = "https://ipfs.io/ipfs/$hash"
-        qrimg.setImageBitmap(qr(url, 400, 400))
+        qrimg.setImageBitmap(qr(url , 400 , 400))
         layout.apply { setOnClickListener { requestFocus() } }
         hashtxt.apply {
             text = "$hash"
             var index = 0
             val switch = {
-                text = when (++index % 4) {
+                text = when (++ index % 4) {
                     1 -> url
                     2 -> "ipfs://$hash"
                     3 -> "/ipfs/$hash"

@@ -5,19 +5,20 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.location.Location
 import android.net.Uri
-import io.ipfs.api.IPFS
 import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
+import com.google.gson.GsonBuilder
+import io.ipfs.api.IPFS
 import io.ipfs.api.MerkleNode
 import io.ipfs.api.NamedStreamable
 import io.ipfs.multihash.Multihash
+import models.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
+import utils.date.DateUtils
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
-import android.webkit.MimeTypeMap
-import com.google.gson.GsonBuilder
-import models.*
 import java.util.*
 
 class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) {
@@ -30,7 +31,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     }
 
     fun send(channel: String , text: String , callback: ((Multihash) -> Unit)?) {
-        val textResource = IpfsTextResource(UUID.randomUUID(),peer, DateUtils.GMT.time(), text)
+        val textResource = IpfsTextResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , text)
         val json = gson.toJson(textResource)
         val jsonTempFile = json.tempFile
         if (jsonTempFile != null) {
@@ -39,7 +40,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     }
 
     fun send(channel: String , location: Location , callback: ((Multihash) -> Unit)?) {
-        val locationResource = IpfsLocationResource(UUID.randomUUID(), peer, DateUtils.GMT.time(), location)
+        val locationResource = IpfsLocationResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , location)
         val json = gson.toJson(locationResource)
         val jsonTempFile = json.tempFile
         if (jsonTempFile != null) {
@@ -64,7 +65,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     private fun storeAndSendResourceFile(channel: String , file: File , callback: ((Multihash) -> Unit)?) {
         addFile(file) {
             val fileDTO = FileDTO(file.name , Uri.fromFile(file).mimeType , it.toString())
-            val dataResource = IpfsDataResource(UUID.randomUUID(), peer , DateUtils.GMT.time(), fileDTO)
+            val dataResource = IpfsDataResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO)
             val json = gson.toJson(dataResource)
             val jsonTempFile = json.tempFile
             if (jsonTempFile != null) {

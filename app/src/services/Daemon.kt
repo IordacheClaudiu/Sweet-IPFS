@@ -11,7 +11,8 @@ import android.os.Build
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.util.Log
-import application.*
+import application.get
+import application.ipfs
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -46,10 +47,10 @@ class Daemon(private val ctx: Context) {
     }
 
     fun daemonIsRunning(): Boolean {
-        return ServiceUtils.isServiceRunning(ctx, DaemonService::class.java)
+        return ServiceUtils.isServiceRunning(ctx , DaemonService::class.java)
     }
 
-    fun install(callback: () -> Unit, err: (String) -> Unit = {}) {
+    fun install(callback: () -> Unit , err: (String) -> Unit = {}) {
         val act = ctx as? Activity ?: return
 
         val type = when {
@@ -83,7 +84,7 @@ class Daemon(private val ctx: Context) {
     }
 
     fun run(cmd: String) = Runtime.getRuntime().exec(
-            "${bin.absolutePath} $cmd",
+            "${bin.absolutePath} $cmd" ,
             arrayOf("IPFS_PATH=${store.absolutePath}")
     )
 
@@ -99,15 +100,15 @@ class Daemon(private val ctx: Context) {
         Thread {
             val exec = run("init")
             Thread {
-                exec.inputStream.bufferedReader().forEachLine { Log.d(LOG_TAG, it) }
+                exec.inputStream.bufferedReader().forEachLine { Log.d(LOG_TAG , it) }
             }.start()
             Thread {
-                exec.errorStream.bufferedReader().forEachLine { Log.d(LOG_TAG, it) }
+                exec.errorStream.bufferedReader().forEachLine { Log.d(LOG_TAG , it) }
             }.start()
             exec.waitFor()
 
             // copy swarm.key
-            if (!swarmFile.exists()) {
+            if (! swarmFile.exists()) {
                 swarmFile.createNewFile()
                 act.assets.open(swarmKey).apply {
                     swarmFile.outputStream().also {
@@ -124,17 +125,17 @@ class Daemon(private val ctx: Context) {
             // change config file
             config.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
                 remove("LowWater")
-                addProperty("LowWater", 20)
+                addProperty("LowWater" , 20)
                 remove("HighWater")
-                addProperty("HighWater", 40)
+                addProperty("HighWater" , 40)
                 remove("GracePeriod")
-                addProperty("GracePeriod", "120s")
+                addProperty("GracePeriod" , "120s")
             }
 
             config.remove("Bootstrap")
             val array = JsonArray(1)
             array.add("/ip4/192.168.1.2/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
-            config.add("Bootstrap", array)
+            config.add("Bootstrap" , array)
 
             config { config }
 
@@ -147,7 +148,7 @@ class Daemon(private val ctx: Context) {
     fun start(callback: () -> Unit) {
         val act = ctx as? Activity ?: return
 
-        act.startService(Intent(act, DaemonService::class.java))
+        act.startService(Intent(act , DaemonService::class.java))
 
         val progress = ProgressDialog(act).apply {
             setMessage(ctx.getString(R.string.daemon_starting))
@@ -183,21 +184,21 @@ class DaemonService : Service() {
 
     override fun onCreate() = super.onCreate().also { _ ->
 
-        val exit = Intent(this, DaemonService::class.java).apply {
+        val exit = Intent(this , DaemonService::class.java).apply {
             action = "STOP"
-        }.let { PendingIntent.getService(this, 0, it, 0) }
+        }.let { PendingIntent.getService(this , 0 , it , 0) }
 
-        val open = Intent(this, MainActivity::class.java)
-                .let { PendingIntent.getActivity(this, 0, it, 0) }
+        val open = Intent(this , MainActivity::class.java)
+                .let { PendingIntent.getActivity(this , 0 , it , 0) }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            NotificationChannel("sweetipfs", "Sweet IPFS", IMPORTANCE_MIN).apply {
+            NotificationChannel("sweetipfs" , "Sweet IPFS" , IMPORTANCE_MIN).apply {
                 description = "Sweet IPFS"
                 getSystemService(NotificationManager::class.java)
                         .createNotificationChannel(this)
             }
 
-        NotificationCompat.Builder(this, "sweetipfs").run {
+        NotificationCompat.Builder(this , "sweetipfs").run {
             setOngoing(true)
             color = Color.parseColor("#4b9fa2")
             setSmallIcon(R.drawable.notificon)
@@ -205,17 +206,17 @@ class DaemonService : Service() {
             setContentTitle(getString(R.string.notif_title))
             setContentText(getString(R.string.notif_msg))
             setContentIntent(open)
-            addAction(ic_menu_close_clear_cancel, getString(R.string.stop), exit)
+            addAction(ic_menu_close_clear_cancel , getString(R.string.stop) , exit)
             build()
-        }.also { startForeground(1, it) }
+        }.also { startForeground(1 , it) }
 
         daemon = ipfsDaemon.run("daemon --enable-pubsub-experiment")
 
         Thread {
-            daemon.inputStream.bufferedReader().forEachLine { Log.d(LOGTAG, it) }
+            daemon.inputStream.bufferedReader().forEachLine { Log.d(LOGTAG , it) }
         }.start()
         Thread {
-            daemon.errorStream.bufferedReader().forEachLine { Log.d(LOGTAG, it) }
+            daemon.errorStream.bufferedReader().forEachLine { Log.d(LOGTAG , it) }
         }.start()
 
     }
@@ -225,8 +226,8 @@ class DaemonService : Service() {
         NotificationManagerCompat.from(this).cancel(1)
     }
 
-    override fun onStartCommand(i: Intent?, f: Int, id: Int) = START_STICKY.also {
-        super.onStartCommand(i, f, id)
+    override fun onStartCommand(i: Intent? , f: Int , id: Int) = START_STICKY.also {
+        super.onStartCommand(i , f , id)
         i?.action?.takeIf { it == "STOP" }?.also { stopSelf() }
     }
 }
