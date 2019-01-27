@@ -25,20 +25,23 @@ class TimeAgo {
             }
 
             val diff = now - time
-            if (diff < MINUTE_MILLIS) {
-                return "just now"
+            return if (diff < MINUTE_MILLIS) {
+                "just now"
             } else if (diff < 2 * MINUTE_MILLIS) {
-                return "a minute ago"
+                "a minute ago"
             } else if (diff < 50 * MINUTE_MILLIS) {
-                return "$diff / $MINUTE_MILLIS minutes ago"
+                val minutes = diff / MINUTE_MILLIS
+                "$minutes minutes ago"
             } else if (diff < 90 * MINUTE_MILLIS) {
-                return "an hour ago"
+                "an hour ago"
             } else if (diff < 24 * HOUR_MILLIS) {
-                return "$diff / $HOUR_MILLIS hours ago"
+                val hours = diff / HOUR_MILLIS
+                "$hours hours ago"
             } else if (diff < 48 * HOUR_MILLIS) {
-                return "yesterday"
+                "yesterday"
             } else {
-                return "$diff / $DAY_MILLIS days ago"
+                val days = diff / DAY_MILLIS
+                "$days days ago"
             }
         }
     }

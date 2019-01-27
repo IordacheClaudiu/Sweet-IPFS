@@ -1,16 +1,16 @@
 package adapters.resources
 
-import android.support.v7.widget.RecyclerView
 import android.view.View
+import kotlinx.android.synthetic.main.reciclerview_binary_row.view.*
 import models.IpfsDataResource
-import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
+import utils.date.TimeAgo
 
 
-class BinaryResourceHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
+class BinaryResourceHolder(v: View) : ResourceHolder<IpfsDataResource>(v) {
 
     private var view: View = v
-    private var binaryResource: IpfsDataResource? = null
+    override lateinit var resource: IpfsDataResource
 
     init {
         v.setOnClickListener(this)
@@ -20,11 +20,18 @@ class BinaryResourceHolder(v: View) : RecyclerView.ViewHolder(v) , View.OnClickL
         info { "CLICK!" }
     }
 
-    fun bindResource(resource: IpfsDataResource) {
-        this.binaryResource = resource
-//            view.type.text = "Binary"
+    override fun bind(resource: IpfsDataResource) {
+        super.bind(resource)
+        view.peer_name.text = resource.peer.username
+        view.peer_system.text = resource.peer.os + " " + resource.peer.device
+        refreshTimeAgo()
     }
 
+    override fun reset() {
+
+    }
+
+    override fun refreshTimeAgo() {
+        view.timestamp.text = TimeAgo.getTimeAgo(resource.timestamp)
+    }
 }
-
-

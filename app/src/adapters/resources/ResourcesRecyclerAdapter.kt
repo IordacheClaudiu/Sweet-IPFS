@@ -34,13 +34,13 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
         val resource = resources[position]
         when (resource.type) {
             IpfsResourceType.TEXT -> {
-                (holder as TextResourceHolder).bindResource(resource as IpfsTextResource)
+                (holder as TextResourceHolder).bind(resource as IpfsTextResource)
             }
             IpfsResourceType.LOCATION -> {
-                (holder as LocationResourceHolder).bindResource(resource as IpfsLocationResource)
+                (holder as LocationResourceHolder).bind(resource as IpfsLocationResource)
             }
             IpfsResourceType.BINARY -> {
-                (holder as BinaryResourceHolder).bindResource(resource as IpfsDataResource)
+                (holder as BinaryResourceHolder).bind(resource as IpfsDataResource)
             }
         }
     }
@@ -48,9 +48,9 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         super.onViewRecycled(holder)
         when (holder) {
-            is LocationResourceHolder -> {
+            is ResourceHolder<*> -> {
                 holder.notNull {
-                    it.resetMap()
+                    it.reset()
                 }
             }
         }
@@ -71,7 +71,10 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
 
     fun add(newResources: List<IIpfsResource>) {
         resources.addAll(newResources)
-        notifyItemInserted(resources.count() - 1)
+        resources.sortByDescending {
+            it.timestamp.time
+        }
+        notifyDataSetChanged()
     }
 
 

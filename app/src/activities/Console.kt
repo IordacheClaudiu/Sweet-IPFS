@@ -173,14 +173,6 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         recyclerView.layoutManager = linearLayoutManager
         val resources: MutableList<IIpfsResource> = mutableListOf()
         adapter = ResourcesRecyclerAdapter(resources)
-        val peer = PeerDTO("Claudiu Iordache" , "Galaxy S9" , "Android 8" , listOf("Iasi"))
-        val textRes = IpfsTextResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , "Dummy")
-        val targetLocation = Location("")
-        targetLocation.longitude = -66.903603
-        targetLocation.latitude = 10.480594
-        val locationRes = IpfsLocationResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , targetLocation)
-
-        adapter.add(listOf(textRes , locationRes))
         recyclerView.adapter = adapter
     }
 

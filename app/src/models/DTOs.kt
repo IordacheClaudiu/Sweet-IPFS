@@ -1,6 +1,7 @@
 package models;
 
 import android.location.Location
+import java.io.Serializable
 import java.util.*
 
 enum class IpfsResourceType {
@@ -14,7 +15,7 @@ interface IIpfsResource {
     val timestamp: Date
 }
 
-data class PeerDTO(val username: String , val device: String , val os: String , val addresses: List<String>)
+data class PeerDTO(val username: String , val device: String , val os: String , val addresses: List<String>) : Serializable
 
 data class FileDTO(val filename: String , val mimeType: String? , val hash: String)
 

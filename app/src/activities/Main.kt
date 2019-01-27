@@ -89,12 +89,14 @@ class MainActivity : AppCompatActivity() , AnkoLogger {
         } else {
             info { "Init ignored." }
         }
-        if (! ipfsDaemon.daemonIsRunning()) {
-            ipfsDaemon.start { }
-            info { "Daemon started." }
+        if (!ipfsDaemon.daemonIsRunning()) {
+            ipfsDaemon.start {
+                info { "Daemon started." }
+                showConsoleActivity()
+            }
         } else {
             info { "Daemon ignored." }
+            showConsoleActivity()
         }
-        showConsoleActivity()
     }
 }
