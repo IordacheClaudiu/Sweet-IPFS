@@ -5,7 +5,7 @@ import java.io.Serializable
 import java.util.*
 
 enum class IpfsResourceType {
-    LOCATION , TEXT , BINARY
+    LOCATION , TEXT , IMAGE, VIDEO
 }
 
 interface IIpfsResource {
@@ -33,9 +33,16 @@ data class IpfsLocationResource(override val id: UUID ,
     override val type = IpfsResourceType.LOCATION
 }
 
-data class IpfsDataResource(override val id: UUID ,
-                            override val peer: PeerDTO ,
-                            override val timestamp: Date ,
-                            val file: FileDTO) : IIpfsResource {
-    override val type = IpfsResourceType.BINARY
+data class IpfsImageResource(override val id: UUID ,
+                             override val peer: PeerDTO ,
+                             override val timestamp: Date ,
+                             val file: FileDTO) : IIpfsResource {
+    override val type = IpfsResourceType.IMAGE
+}
+
+data class IpfsVideoResource(override val id: UUID ,
+                             override val peer: PeerDTO ,
+                             override val timestamp: Date ,
+                             val file: FileDTO) : IIpfsResource {
+    override val type = IpfsResourceType.VIDEO
 }

@@ -21,8 +21,8 @@ class LocationResourceHolder(v: View) : ResourceHolder<IpfsLocationResource>(v) 
 
     init {
         v.setOnClickListener(this)
-        v.location_view.onCreate(null)
-        v.location_view.getMapAsync(this)
+        v.image_view.onCreate(null)
+        v.image_view.getMapAsync(this)
     }
 
     override fun onClick(v: View) {
@@ -34,7 +34,7 @@ class LocationResourceHolder(v: View) : ResourceHolder<IpfsLocationResource>(v) 
         this.googleMap.notNull {
             MapsInitializer.initialize(view.context)
             it.uiSettings?.isMapToolbarEnabled = false
-            resource.location.notNull { updateMapContents() }
+            resource.location.notNull { googleMap.notNull { updateMapContents(it) } }
         }
     }
 
@@ -43,9 +43,7 @@ class LocationResourceHolder(v: View) : ResourceHolder<IpfsLocationResource>(v) 
         view.peer_name.text = resource.peer.username
         view.peer_system.text = resource.peer.os + " " + resource.peer.device
         refreshTimeAgo()
-        if (googleMap != null) {
-            updateMapContents()
-        }
+        googleMap.notNull { updateMapContents(it) }
     }
 
     override fun reset() {
@@ -60,14 +58,12 @@ class LocationResourceHolder(v: View) : ResourceHolder<IpfsLocationResource>(v) 
     }
 
 
-    private fun updateMapContents() {
-        googleMap.notNull {
-            it.clear()
-            it.addMarker(MarkerOptions().position(resource.location.latLng()))
-            val cameraUpdate = CameraUpdateFactory.newLatLngZoom(resource.location.latLng() , 20f)
-            it.moveCamera(cameraUpdate)
-            it.mapType = GoogleMap.MAP_TYPE_NORMAL
-        }
+    private fun updateMapContents(googleMap: GoogleMap) {
+        googleMap.clear()
+        googleMap.addMarker(MarkerOptions().position(resource.location.latLng()))
+        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(resource.location.latLng() , 20f)
+        googleMap.moveCamera(cameraUpdate)
+        googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
     }
 
 

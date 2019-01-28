@@ -4,11 +4,12 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import io.ipfs.api.IPFS
 import models.*
 import ro.uaic.info.ipfs.R
 import utils.notNull
 
-class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: MutableList<IIpfsResource>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup , viewType: Int): RecyclerView.ViewHolder {
         when (viewType) {
@@ -17,10 +18,15 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
                         .inflate(R.layout.reciclerview_location_row , parent , false) as View
                 return LocationResourceHolder(inflatedView)
             }
-            IpfsResourceType.BINARY.ordinal -> {
+            IpfsResourceType.IMAGE.ordinal -> {
                 val inflatedView = LayoutInflater.from(parent.context)
                         .inflate(R.layout.reciclerview_binary_row , parent , false) as View
-                return BinaryResourceHolder(inflatedView)
+                return ImageResourceHolder(inflatedView , ipfs)
+            }
+            IpfsResourceType.VIDEO.ordinal -> {
+                val inflatedView = LayoutInflater.from(parent.context)
+                        .inflate(R.layout.reciclerview_video_row , parent , false) as View
+                return VideoResourceHolder(inflatedView , ipfs)
             }
             else -> {
                 val inflatedView = LayoutInflater.from(parent.context)
@@ -39,8 +45,11 @@ class ResourcesRecyclerAdapter(private val resources: MutableList<IIpfsResource>
             IpfsResourceType.LOCATION -> {
                 (holder as LocationResourceHolder).bind(resource as IpfsLocationResource)
             }
-            IpfsResourceType.BINARY -> {
-                (holder as BinaryResourceHolder).bind(resource as IpfsDataResource)
+            IpfsResourceType.IMAGE -> {
+                (holder as ImageResourceHolder).bind(resource as IpfsImageResource)
+            }
+            IpfsResourceType.VIDEO -> {
+                (holder as VideoResourceHolder).bind(resource as IpfsVideoResource)
             }
         }
     }

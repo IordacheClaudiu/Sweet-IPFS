@@ -29,8 +29,6 @@ import io.ipfs.api.Peer
 import io.ipfs.multiaddr.MultiAddress
 import kotlinx.android.synthetic.main.activity_console.*
 import models.IIpfsResource
-import models.IpfsLocationResource
-import models.IpfsTextResource
 import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
@@ -39,8 +37,6 @@ import utils.Constants
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import utils.ResourceReceiver
 import utils.ResourceSender
-import utils.date.DateUtils
-import java.util.*
 import java.util.function.Consumer
 import java.util.stream.Collectors
 
@@ -172,7 +168,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
         linearLayoutManager = LinearLayoutManager(this)
         recyclerView.layoutManager = linearLayoutManager
         val resources: MutableList<IIpfsResource> = mutableListOf()
-        adapter = ResourcesRecyclerAdapter(resources)
+        adapter = ResourcesRecyclerAdapter(ipfs , resources)
         recyclerView.adapter = adapter
     }
 

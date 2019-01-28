@@ -12,13 +12,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <com.google.android.gms.maps.MapView xmlns:map="http://schemas.android.com/apk/res-auto"
-            android:id="@+id/location_view"
+        <ImageView
+            android:id="@+id/image_view"
             android:layout_width="match_parent"
             android:layout_height="150dp"
             android:layout_weight="1"
-            app:layout_constraintTop_toTopOf="parent"
-            map:liteMode="true" />
+            android:scaleType="centerCrop"
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <ImageView
             android:id="@+id/peer_image"
@@ -27,7 +27,7 @@
             android:layout_marginTop="5dp"
             android:src="@drawable/ic_account_circle_black_24dp"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/location_view" />
+            app:layout_constraintTop_toBottomOf="@id/image_view" />
 
         <TextView
             android:id="@+id/peer_name"

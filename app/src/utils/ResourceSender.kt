@@ -34,43 +34,70 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
         val textResource = IpfsTextResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , text)
         val json = gson.toJson(textResource)
         val jsonTempFile = json.tempFile
-        if (jsonTempFile != null) {
-            sendJsonFile(channel , jsonTempFile , callback)
-        }
+        jsonTempFile.notNull({
+            sendJsonFile(channel , it , callback)
+        } , {
+            //TODO: add error
+        })
+
     }
 
     fun send(channel: String , location: Location , callback: ((Multihash) -> Unit)?) {
         val locationResource = IpfsLocationResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , location)
         val json = gson.toJson(locationResource)
         val jsonTempFile = json.tempFile
-        if (jsonTempFile != null) {
-            sendJsonFile(channel , jsonTempFile , callback)
-        }
+        jsonTempFile.notNull({
+            sendJsonFile(channel , it , callback)
+        } , {
+            //TODO: add error
+        })
     }
 
     fun send(channel: String , uri: Uri , callback: ((Multihash) -> Unit)?) {
         val uriTempFile = uri.tempFile
-        if (uriTempFile != null) {
-            storeAndSendResourceFile(channel , uriTempFile , callback)
-        }
+        uriTempFile.notNull({
+            storeAndSendResourceFile(channel , it , callback)
+        } , {
+            //TODO: add error
+        })
     }
 
     fun send(channel: String , bitmap: Bitmap , callback: ((Multihash) -> Unit)?) {
         val bitmapTempFile = bitmap.tempFile
-        if (bitmapTempFile != null) {
-            storeAndSendResourceFile(channel , bitmapTempFile , callback)
-        }
+        bitmapTempFile.notNull({
+            storeAndSendResourceFile(channel , it , callback)
+        } , {
+            //TODO: add error
+        })
+
     }
 
     private fun storeAndSendResourceFile(channel: String , file: File , callback: ((Multihash) -> Unit)?) {
         addFile(file) {
             val fileDTO = FileDTO(file.name , Uri.fromFile(file).mimeType , it.toString())
-            val dataResource = IpfsDataResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO)
-            val json = gson.toJson(dataResource)
-            val jsonTempFile = json.tempFile
-            if (jsonTempFile != null) {
-                sendJsonFile(channel , jsonTempFile , callback)
-            }
+            val mimeType = fileDTO.mimeType
+            mimeType.notNull({
+                var resource: IIpfsResource? = null
+                when {
+                    it.startsWith("video") -> {
+                        resource = IpfsVideoResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO)
+                    }
+                    it.startsWith("image") -> {
+                        resource = IpfsImageResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO)
+                    }
+                }
+                resource.notNull({
+                    val json = gson.toJson(it)
+                    val jsonTempFile = json.tempFile
+                    jsonTempFile.notNull({
+                        sendJsonFile(channel , it , callback)
+                    } , {
+                        //TODO: add error
+                    })
+                })
+            } , {
+                //TODO: add error
+            })
         }
     }
 
@@ -126,7 +153,8 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
         get() {
             //Check uri format to avoid null
             if (scheme != ContentResolver.SCHEME_CONTENT) {
-                return MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(File(path)).toString());
+                val fileExtension = MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(File(path)).toString())
+                return MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
             }
             val mime = MimeTypeMap.getSingleton();
             return mime.getExtensionFromMimeType(context.contentResolver.getType(this));

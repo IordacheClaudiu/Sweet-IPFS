@@ -51,8 +51,14 @@ class ResourceReceiver(val context: Context , val ipfs: IPFS) : AnkoLogger {
                                             onSuccess(location)
                                         }
                                     }
-                                    IpfsResourceType.BINARY -> {
-                                        val binary = gson.fromJson<IpfsDataResource>(json , IpfsDataResource::class.java)
+                                    IpfsResourceType.IMAGE -> {
+                                        val binary = gson.fromJson<IpfsImageResource>(json , IpfsImageResource::class.java)
+                                        uiThread {
+                                            onSuccess(binary)
+                                        }
+                                    }
+                                    IpfsResourceType.VIDEO -> {
+                                        val binary = gson.fromJson<IpfsVideoResource>(json , IpfsVideoResource::class.java)
                                         uiThread {
                                             onSuccess(binary)
                                         }
