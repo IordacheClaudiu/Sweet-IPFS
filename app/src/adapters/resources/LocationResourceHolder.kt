@@ -46,7 +46,7 @@ class LocationResourceHolder(v: View) : ResourceHolder<IpfsLocationResource>(v) 
         googleMap.notNull { updateMapContents(it) }
     }
 
-    override fun reset() {
+    override fun viewRecycled() {
         googleMap.notNull {
             it.clear()
             it.mapType = GoogleMap.MAP_TYPE_NONE

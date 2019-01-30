@@ -57,11 +57,19 @@ class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: M
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         super.onViewRecycled(holder)
         when (holder) {
-            is ResourceHolder<*> -> {
-                holder.notNull {
-                    it.reset()
-                }
-            }
+            is ResourceHolder<*> -> { holder.viewRecycled() }
+        }
+    }
+
+    override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+        when (holder) {
+            is ResourceHolder<*> -> { holder.viewAttached() }
+        }
+    }
+
+    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+        when (holder) {
+            is ResourceHolder<*> -> { holder.viewDetached() }
         }
     }
 

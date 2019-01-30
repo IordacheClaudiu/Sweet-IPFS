@@ -55,7 +55,6 @@
         app:menu_colorNormal="@color/teal"
         app:menu_colorPressed="@color/powder_blue"
         app:menu_colorRipple="#99d4d4d4"
-        app:menu_fab_label="Floating Action Menu"
         app:menu_fab_size="normal"
         app:menu_icon="@drawable/fab_add"
         app:menu_labels_colorNormal="#333"

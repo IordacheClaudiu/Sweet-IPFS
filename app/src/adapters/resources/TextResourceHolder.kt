@@ -27,9 +27,12 @@ abstract class ResourceHolder<T : IIpfsResource>(v: View) : RecyclerView.ViewHol
         }
     }
 
-    open fun reset() {
+    open fun viewRecycled() {
         timer.cancel()
     }
+
+    open fun viewAttached() {}
+    open fun viewDetached() {}
 
     abstract fun refreshTimeAgo()
 

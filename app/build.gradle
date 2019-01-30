@@ -56,6 +56,7 @@ dependencies {
     implementation "com.github.clans:fab:1.6.2"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
 
+    implementation 'com.google.android.exoplayer:exoplayer:2.9.4'
 
     // IPFS - API
     implementation "com.github.ipfs:java-ipfs-api:v$java_ipfs_api"

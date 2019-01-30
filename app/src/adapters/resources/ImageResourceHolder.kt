@@ -37,7 +37,7 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
         loadBinary(resource.file)
     }
 
-    override fun reset() {
+    override fun viewRecycled() {
         view.image_view.visibility = View.VISIBLE
         inputStream.notNull({
             if (it.available() != 0) {
