@@ -13,7 +13,9 @@ import io.ipfs.api.MerkleNode
 import io.ipfs.api.NamedStreamable
 import io.ipfs.multihash.Multihash
 import models.*
+import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.error
 import org.jetbrains.anko.uiThread
 import utils.date.DateUtils
 import java.io.File
@@ -21,7 +23,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.*
 
-class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) {
+class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) : AnkoLogger {
 
     private val gson by lazy {
         val builder = GsonBuilder()
@@ -30,49 +32,57 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
         builder.create()
     }
 
-    fun send(channel: String , text: String , callback: ((Multihash) -> Unit)?) {
+    fun send(channel: String , text: String , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         val textResource = IpfsTextResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , text)
         val json = gson.toJson(textResource)
         val jsonTempFile = json.tempFile
         jsonTempFile.notNull({
-            sendJsonFile(channel , it , callback)
+            sendJsonFile(channel , it , onSuccess , onError)
         } , {
-            //TODO: add error
+            val fileCreationException = FileCreationException("File from text could not be created.")
+            error { fileCreationException }
+            onError?.invoke(fileCreationException)
         })
 
     }
 
-    fun send(channel: String , location: Location , callback: ((Multihash) -> Unit)?) {
+    fun send(channel: String , location: Location , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         val locationResource = IpfsLocationResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , location)
         val json = gson.toJson(locationResource)
         val jsonTempFile = json.tempFile
         jsonTempFile.notNull({
-            sendJsonFile(channel , it , callback)
+            sendJsonFile(channel , it , onSuccess , onError)
         } , {
-            //TODO: add error
+            val fileCreationException = FileCreationException("File from $location  could not be created.")
+            error { fileCreationException }
+            onError?.invoke(fileCreationException)
         })
     }
 
-    fun send(channel: String , uri: Uri , callback: ((Multihash) -> Unit)?) {
+    fun send(channel: String , uri: Uri , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         val uriTempFile = uri.tempFile
         uriTempFile.notNull({
-            storeAndSendResourceFile(channel , it , callback)
+            storeAndSendResourceFile(channel , it , onSuccess , onError)
         } , {
-            //TODO: add error
+            val fileCreationException = FileCreationException("File from ${uri.path} could not be created.")
+            error { "Cannot store and send from $uri" }
+            onError?.invoke(fileCreationException)
         })
     }
 
-    fun send(channel: String , bitmap: Bitmap , callback: ((Multihash) -> Unit)?) {
+    fun send(channel: String , bitmap: Bitmap , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         val bitmapTempFile = bitmap.tempFile
         bitmapTempFile.notNull({
-            storeAndSendResourceFile(channel , it , callback)
+            storeAndSendResourceFile(channel , it , onSuccess , onError)
         } , {
-            //TODO: add error
+            val fileCreationException = FileCreationException("Bitmap could not be created.")
+            error { fileCreationException }
+            onError?.invoke(fileCreationException)
         })
 
     }
 
-    private fun storeAndSendResourceFile(channel: String , file: File , callback: ((Multihash) -> Unit)?) {
+    private fun storeAndSendResourceFile(channel: String , file: File , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         addFile(file) {
             val fileDTO = FileDTO(file.name , Uri.fromFile(file).mimeType , it.toString())
             val mimeType = fileDTO.mimeType
@@ -86,34 +96,42 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
                         resource = IpfsImageResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO)
                     }
                 }
-                resource.notNull({
+                resource.notNull {
                     val json = gson.toJson(it)
                     val jsonTempFile = json.tempFile
                     jsonTempFile.notNull({
-                        sendJsonFile(channel , it , callback)
+                        sendJsonFile(channel , it , onSuccess , onError)
                     } , {
-                        //TODO: add error
+                        val fileCreationException = FileCreationException("${file.name} could not be created.")
+                        error { fileCreationException }
+                        onError?.invoke(fileCreationException)
                     })
-                })
+                }
             } , {
-                //TODO: add error
+                val invalidMimeTypeException = InvalidMimeTypeException()
+                error { invalidMimeTypeException }
+                onError?.invoke(invalidMimeTypeException)
             })
         }
     }
 
-    private fun sendJsonFile(channel: String , file: File , callback: ((Multihash) -> Unit)?) {
+    private fun sendJsonFile(channel: String , file: File , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         addFile(file) { multihash ->
             doAsync {
-                ipfs.pubsub.sub(channel)
-                ipfs.pubsub.pub(channel , multihash.toString())
-                uiThread {
-                    callback?.invoke(multihash)
+                try {
+                    ipfs.pubsub.sub(channel)
+                    ipfs.pubsub.pub(channel , multihash.toString())
+                    uiThread {
+                        onSuccess?.invoke(multihash)
+                    }
+                } catch (exception: Exception) {
+                    onError?.invoke(exception)
                 }
             }
         }
     }
 
-    private fun addFile(file: File , callback: ((Multihash) -> Unit)) {
+    private fun addFile(file: File , onSuccess: ((Multihash) -> Unit)) {
         val wrapper = NamedStreamable.FileWrapper(file)
         doAsync {
             var i: List<MerkleNode>? = null
@@ -121,7 +139,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
                 //TODO: pin content
                 i = ipfs.add(wrapper , false)
             }
-            callback(i.last().hash)
+            onSuccess(i.last().hash)
         }
     }
 

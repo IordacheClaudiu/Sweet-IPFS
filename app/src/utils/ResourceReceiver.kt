@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import io.ipfs.api.IPFS
+import io.ipfs.multiaddr.MultiAddress
 import io.ipfs.multihash.Multihash
 import models.*
 import org.jetbrains.anko.*
@@ -31,6 +32,7 @@ class ResourceReceiver(val context: Context , val ipfs: IPFS) : AnkoLogger {
         doAsync {
             try {
                 val stream = ipfs.pubsub.sub(channel)
+
                 uiThread { subscribedChannels.putIfAbsent(channel , stream) }
                 stream.forEach {
                     val dataRaw = it[Constants.IPFS_PUB_SUB_DATA] as? String

@@ -81,7 +81,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
             info { location }
             lastKnownLocation = location
             if (lastKnownLocation != null) {
-                resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
+                resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null, null)
             }
         }
 
@@ -116,13 +116,13 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                 rdata?.extras?.also {
                     info { "Image taken" }
                     val imageBitmap = it.get("data") as Bitmap
-                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , imageBitmap , null)
+                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , imageBitmap , null , null)
                 }
             }
             READ_DOCUMENT_REQUEST_CODE -> {
                 rdata?.data?.also { uri ->
                     info { "Uri: $uri" }
-                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , uri , null)
+                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , uri , null, null)
                 }
             }
         }
@@ -142,7 +142,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                 // If request is cancelled, the result arrays are empty.
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     try {
-                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER , 0 , 0f , locationListener)
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER , 2000 , 3f , locationListener)
                     } catch (e: SecurityException) {
                         error { e }
                     }
@@ -203,7 +203,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                     val peer = PeerDTO(username , device , os , list)
                     resourceSender = ResourceSender(ctx , peer , ipfs)
                     if (lastKnownLocation != null) {
-                        resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null)
+                        resourceSender?.send(IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null, null)
                     }
                     resourceReceiver = ResourceReceiver(ctx , ipfs)
                     resourceReceiver?.subscribeTo(IPFS_PUB_SUB_CHANNEL , { resource ->
@@ -504,7 +504,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                     setView(this)
                 }
                 setPositiveButton(getString(R.string.apply)) { _ , _ ->
-                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , txt.text.toString() , null)
+                    resourceSender?.send(IPFS_PUB_SUB_CHANNEL , txt.text.toString() , null, null)
                 }
                 setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
             }.show()

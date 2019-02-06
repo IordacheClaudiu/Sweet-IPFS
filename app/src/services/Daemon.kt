@@ -133,8 +133,8 @@ class Daemon(private val ctx: Context) {
             }
 
             config.remove("Bootstrap")
-            val array = JsonArray(1)
-            array.add("/ip4/192.168.1.2/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
+            val array = JsonArray(3)
+            array.add("/ip4/192.168.1.7/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
             config.add("Bootstrap" , array)
 
             config { config }
