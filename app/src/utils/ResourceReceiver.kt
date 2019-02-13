@@ -32,7 +32,6 @@ class ResourceReceiver(val context: Context , val ipfs: IPFS) : AnkoLogger {
         doAsync {
             try {
                 val stream = ipfs.pubsub.sub(channel)
-
                 uiThread { subscribedChannels.putIfAbsent(channel , stream) }
                 stream.forEach {
                     val dataRaw = it[Constants.IPFS_PUB_SUB_DATA] as? String

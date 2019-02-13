@@ -37,7 +37,10 @@ class ShareActivity : AppCompatActivity() {
         AlertDialog.Builder(this).apply {
             setTitle(getString(R.string.daemon_not_running))
             setPositiveButton(getString(R.string.start)) { d , _ ->
-                chain(ipfsDaemon::init , ipfsDaemon::start , { d.dismiss(); process() })
+                ipfsDaemon.refresh({
+                    d.dismiss()
+                    process()
+                }, {})
             }
             setNeutralButton(getString(R.string.close)) { _ , _ -> finish() }
         }.show()

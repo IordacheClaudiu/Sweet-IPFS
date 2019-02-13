@@ -17,13 +17,16 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import ro.uaic.info.ipfs.R
+import utils.IPFSBinaryException
 import java.io.FileReader
 
 
 val Context.ipfsDaemon get() = Daemon(this)
 
-class Daemon(private val ctx: Context) {
+class Daemon(private val ctx: Context): AnkoLogger {
     private val LOG_TAG = Daemon::class.java.name
     private val store by lazy { ctx.getExternalFilesDir(null)["ipfs"] }
     private val bin by lazy { ctx.filesDir["ipfsbin"] }
@@ -50,7 +53,51 @@ class Daemon(private val ctx: Context) {
         return ServiceUtils.isServiceRunning(ctx , DaemonService::class.java)
     }
 
-    fun install(callback: () -> Unit , err: (String) -> Unit = {}) {
+    fun refresh(onSuccess: () -> Unit, onError:(Exception) -> Unit) {
+        if (! binaryCopied()) {
+            install(callback = {
+                info { "Install started." }
+                initIfNeeded(onSuccess, onError)
+            } , err = {
+                error(it)
+                onError.invoke(IPFSBinaryException(it))
+
+            })
+        } else {
+            info { "Install ignored." }
+            initIfNeeded(onSuccess, onError)
+        }
+    }
+
+    private fun initIfNeeded(onSuccess: () -> Unit , onError:(Exception) -> Unit){
+        if (! nodeInitialized()) {
+            info { "Init started." }
+            init(callback = {
+                info { "Init finished." }
+                startIfNeeded(onSuccess, onError)
+            })
+        } else {
+            info { "Init ignored." }
+            startIfNeeded(onSuccess, onError)
+        }
+    }
+
+    private fun startIfNeeded(onSuccess: () -> Unit , onError:(Exception) -> Unit) {
+        if (!daemonIsRunning()) {
+            start({
+                info { "Daemon started." }
+                onSuccess.invoke()
+            }, {
+                onError.invoke(it)
+            })
+
+        } else {
+            info { "Daemon ignored." }
+            onSuccess.invoke()
+        }
+    }
+
+    private fun install(callback: () -> Unit , err: (String) -> Unit = {}) {
         val act = ctx as? Activity ?: return
 
         val type = when {
@@ -83,19 +130,8 @@ class Daemon(private val ctx: Context) {
         callback()
     }
 
-    fun run(cmd: String) = Runtime.getRuntime().exec(
-            "${bin.absolutePath} $cmd" ,
-            arrayOf("IPFS_PATH=${store.absolutePath}")
-    )
-
-    fun init(callback: () -> Unit = {}) {
+    private fun init(callback: () -> Unit = {}) {
         val act = ctx as? Activity ?: return
-
-        val progress = ProgressDialog(ctx).apply {
-            setMessage(ctx.getString(R.string.daemon_init))
-            setCancelable(false)
-            show()
-        }
 
         Thread {
             val exec = run("init")
@@ -134,44 +170,38 @@ class Daemon(private val ctx: Context) {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/192.168.1.7/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
+            array.add("/ip4/192.168.1.2/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
             config.add("Bootstrap" , array)
 
             config { config }
-
-            progress.dismiss()
             act.runOnUiThread(callback)
         }.start()
 
     }
 
-    fun start(callback: () -> Unit) {
+    private fun start(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
         val act = ctx as? Activity ?: return
-
         act.startService(Intent(act , DaemonService::class.java))
-
-        val progress = ProgressDialog(act).apply {
-            setMessage(ctx.getString(R.string.daemon_starting))
-            setCancelable(false)
-            show()
-        }
-
         Thread {
-
             while (true.also { Thread.sleep(1000) }) try {
                 version.writeText(
                         ipfs.version() ?: continue
                 ); break
             } catch (ex: Exception) {
+                act.runOnUiThread {
+                    onError.invoke(ex)
+                }
             }
-
             act.runOnUiThread {
-                progress.dismiss()
-                callback()
+                onSuccess.invoke()
             }
         }.start()
     }
 
+    fun run(cmd: String) = Runtime.getRuntime().exec(
+            "${bin.absolutePath} $cmd" ,
+            arrayOf("IPFS_PATH=${store.absolutePath}")
+    )
 }
 
 class DaemonService : Service() {

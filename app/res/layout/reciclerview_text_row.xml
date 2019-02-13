@@ -47,10 +47,13 @@
 
         <TextView
             android:id="@+id/peer_message"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="6"
             android:textStyle="italic"
             app:layout_constraintStart_toEndOf="@+id/peer_image"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/peer_system" />
 
     </android.support.constraint.ConstraintLayout>

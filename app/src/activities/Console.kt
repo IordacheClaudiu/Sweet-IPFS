@@ -100,12 +100,16 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
 
     override fun onCreate(state: Bundle?) = super.onCreate(state).also {
         setContentView(R.layout.activity_console)
-        setupLocationManager()
-        setupCurrentPeer()
         setupRecyclerView()
         setupActionBtn(notImplemented)
         setupConfigBtn()
         setupFloatingBtns()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setupLocationManager()
+        setupCurrentPeer()
     }
 
     override fun onActivityResult(req: Int , res: Int , rdata: Intent?) {
@@ -500,7 +504,7 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
             AlertDialog.Builder(ctx).apply {
                 setTitle(getString(R.string.title_add_text))
                 val txt = EditText(ctx).apply {
-                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    inputType = InputType.TYPE_CLASS_TEXT
                     setView(this)
                 }
                 setPositiveButton(getString(R.string.apply)) { _ , _ ->
