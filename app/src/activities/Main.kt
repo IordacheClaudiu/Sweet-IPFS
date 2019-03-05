@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() , AnkoLogger {
             val dialog = indeterminateProgressDialog(message = "Please wait a bit…", title = "Starting daemon")
             ipfsDaemon.refresh({
                 dialog.dismiss()
-                showConsoleActivity()
+               showTabsActivity()
             }, {
                 dialog.dismiss()
                 alert { it.message }.show()
@@ -66,6 +66,10 @@ class MainActivity : AppCompatActivity() , AnkoLogger {
                 }
     }
 
+    private fun showTabsActivity() = Intent(this, TabsActivity::class.java).run {
+        flags += FLAG_ACTIVITY_NO_ANIMATION
+        startActivity(this)
+    }
     private fun showConsoleActivity() = Intent(this , ConsoleActivity::class.java).run {
         flags += FLAG_ACTIVITY_NO_ANIMATION
         startActivity(this)

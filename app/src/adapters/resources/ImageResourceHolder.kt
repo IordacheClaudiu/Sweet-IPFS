@@ -39,15 +39,14 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
 
     override fun viewRecycled() {
         view.image_view.visibility = View.VISIBLE
-        inputStream.notNull({
+        inputStream?.let {
             if (it.available() != 0) {
-                try {
-                    it.close()
-                } catch (exception: IOException) {
-                    error { "Failed to close inputstream" }
-                }
+            try {
+                it.close()
+            } catch (exception: IOException) {
+                error { "Failed to close inputstream" }
             }
-        })
+        } }
     }
 
     override fun refreshTimeAgo() {

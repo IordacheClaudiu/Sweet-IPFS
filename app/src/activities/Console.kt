@@ -256,10 +256,10 @@ class ConsoleActivity : AppCompatActivity() , AnkoLogger {
                     add(getString(R.string.menu_peers)).setOnMenuItemClickListener {
                         async(50 , { ipfs.swarm.peers() } , {
                             var representation = "No peers."
-                            val peers = it as List<Peer>
+                            var peers = it as List<Peer>
                             if (peers.isNotEmpty()) {
                                 representation = peers.joinToString(separator = "\n" , transform = {
-                                    it.address.toString() + it.id
+                                    it.id.toString()
                                 })
                             }
                             AlertDialog.Builder(ctx).apply {

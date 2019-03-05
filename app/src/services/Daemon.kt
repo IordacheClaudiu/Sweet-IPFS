@@ -18,6 +18,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.error
 import org.jetbrains.anko.info
 import ro.uaic.info.ipfs.R
 import utils.IPFSBinaryException
@@ -35,11 +36,6 @@ class Daemon(private val ctx: Context): AnkoLogger {
     private val swarmKey by lazy { "swarm.key" }
 
     val config by lazy { JsonParser().parse(FileReader(store["config"])).asJsonObject }
-
-    private fun config(consumer: (JsonObject) -> Unit) {
-        GsonBuilder().setPrettyPrinting().create().toJson(config).toByteArray()
-                .also { store["config"].writeBytes(it) }
-    }
 
     fun binaryCopied(): Boolean {
         return bin.exists()
@@ -101,16 +97,11 @@ class Daemon(private val ctx: Context): AnkoLogger {
         val act = ctx as? Activity ?: return
 
         val type = when {
-            Build.CPU_ABI.toLowerCase().startsWith("x86") -> "x86"
-            Build.CPU_ABI.toLowerCase().startsWith("arm") -> "arm"
+            Build.SUPPORTED_ABIS.contains("x86") -> "x86"
+            Build.SUPPORTED_ABIS.contains("arm") -> "arm"
             else -> return err("${ctx.getString(R.string.daemon_unsupported_arch)}: ${Build.CPU_ABI}")
         }
 
-        val progress = ProgressDialog(ctx).apply {
-            setMessage(ctx.getString(R.string.daemon_installing))
-            setCancelable(false)
-            show()
-        }
         // install ipfs
         act.assets.open(type).apply {
             bin.outputStream().also {
@@ -125,8 +116,6 @@ class Daemon(private val ctx: Context): AnkoLogger {
 
         bin.setExecutable(true)
         version.writeText(act.assets.open("version").reader().readText())
-
-        progress.dismiss()
         callback()
     }
 
@@ -170,10 +159,17 @@ class Daemon(private val ctx: Context): AnkoLogger {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/192.168.1.2/tcp/4001/ipfs/QmWeGhsC6x3xWz72vsSAWgS4HeJuPMeU5MVr1NrkmSY7a3")
+            array.add("/ip4/52.34.30.22/tcp/4001/ipfs/QmQgSf59ZrMxt6uXWha4x1dSkUP2jNjPL9vrWtRSytpfqb")
+            array.add("/ip4/54.189.160.162/tcp/4001/ipfs/QmbYQZteYjKLsfEJhg5tnTcTdAKAeutU7ABBsNX3miu5g2")
+            array.add("/ip4/54.214.110.255/tcp/4001/ipfs/QmZjm3bQrFgcGJ8o9rzkEEe5pmF7xG3KBc86WprnXXwYgz")
             config.add("Bootstrap" , array)
 
-            config { config }
+            GsonBuilder()
+                    .setPrettyPrinting()
+                    .create()
+                    .toJson(config)
+                    .toByteArray()
+                    .also { store["config"].writeBytes(it) }
             act.runOnUiThread(callback)
         }.start()
 
@@ -188,9 +184,7 @@ class Daemon(private val ctx: Context): AnkoLogger {
                         ipfs.version() ?: continue
                 ); break
             } catch (ex: Exception) {
-                act.runOnUiThread {
-                    onError.invoke(ex)
-                }
+                error { ex }
             }
             act.runOnUiThread {
                 onSuccess.invoke()

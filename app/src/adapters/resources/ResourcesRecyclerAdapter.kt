@@ -83,16 +83,12 @@ class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: M
     }
 
     fun add(newResource: IIpfsResource) {
-        add(listOf(newResource))
-    }
-
-    fun add(newResources: List<IIpfsResource>) {
-        resources.addAll(newResources)
-        resources.sortByDescending {
-            it.timestamp.time
+        if (!resources.contains(newResource)) {
+            resources.add(newResource)
+            resources.sortByDescending {
+                it.timestamp.time
+            }
+            notifyDataSetChanged()
         }
-        notifyDataSetChanged()
     }
-
-
 }

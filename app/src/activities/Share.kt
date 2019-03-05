@@ -125,6 +125,7 @@ class ShareActivity : AppCompatActivity() {
 
     private fun error(ex: Exception? = null) = AlertDialog.Builder(ctx).apply {
         setTitle(getString(R.string.share_error))
+        setMessage(ex?.message ?: "")
         setPositiveButton(getString(R.string.report)) { _ , _ -> finish() }
         setNegativeButton(getString(R.string.close)) { _ , _ -> finish() }
     }.show().let { Unit }

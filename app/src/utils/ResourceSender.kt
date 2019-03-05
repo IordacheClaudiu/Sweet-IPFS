@@ -8,8 +8,8 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonIOException
 import io.ipfs.api.IPFS
-import io.ipfs.api.MerkleNode
 import io.ipfs.api.NamedStreamable
 import io.ipfs.multihash.Multihash
 import models.*
@@ -18,9 +18,7 @@ import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.error
 import org.jetbrains.anko.uiThread
 import utils.date.DateUtils
-import java.io.File
-import java.io.FileOutputStream
-import java.io.InputStream
+import java.io.*
 import java.util.*
 
 class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) : AnkoLogger {
@@ -117,6 +115,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
 
     private fun sendJsonFile(channel: String , file: File , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         addFile(file) { multihash ->
+            updateIPNS(multihash)
             doAsync {
                 try {
                     ipfs.pubsub.sub(channel)
@@ -134,12 +133,26 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     private fun addFile(file: File , onSuccess: ((Multihash) -> Unit)) {
         val wrapper = NamedStreamable.FileWrapper(file)
         doAsync {
-            var i: List<MerkleNode>? = null
-            while (i == null) {
-                //TODO: pin content
-                i = ipfs.add(wrapper , false)
-            }
+            val i = ipfs.add(wrapper , false)
+            ipfs.pin.add(i.last().hash)
             onSuccess(i.last().hash)
+        }
+    }
+
+    private fun updateIPNS(multiHash: Multihash) {
+        repositoryDTO.add(multiHash)
+        repositoryFile.bufferedWriter().use { out ->
+            try {
+                gson.toJson(repositoryDTO , out)
+                addFile(repositoryFile) {
+                    doAsync {
+                        val ipnsHash = ipfs.name.publish(it)
+                        print(ipnsHash)
+                    }
+                }
+            } catch (e: JsonIOException) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -162,6 +175,22 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
             outStream.close()
             return file
         }
+
+    // IPNS file
+    private val repositoryFile: File by lazy {
+        val file = File( context.filesDir,peer.username + "_repo.json")
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+        return@lazy file
+    }
+    // IPNS repoDTO
+    private val repositoryDTO: RepositoryDTO by lazy {
+        repositoryFile.bufferedReader().use { input ->
+            val repoDTO = gson.fromJson(input, RepositoryDTO::class.java)
+            return@use repoDTO ?: RepositoryDTO(peer)
+        }
+    }
 
     // Retrieve uri data
     private val Uri.inputStream get() = context.contentResolver.openInputStream(this)
@@ -199,6 +228,5 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
             close(); it.close()
         }
     }
-
 
 }

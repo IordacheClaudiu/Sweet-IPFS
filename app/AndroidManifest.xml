@@ -17,9 +17,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".activity_tabbar"></activity>
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAqLaZ37-19e8UV4n6BkKZyGTkXUnyvv2Y"/>
+            android:value="AIzaSyAqLaZ37-19e8UV4n6BkKZyGTkXUnyvv2Y" />
+
         <service
             android:name="services.DaemonService"
             android:exported="false"
@@ -28,33 +31,34 @@
         <activity android:name="activities.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity android:name="activities.TabsActivity"></activity>
         <activity
             android:name="activities.ConsoleActivity"
-            android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait"/>
-
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name="activities.ShareActivity"
             android:configChanges="screenLayout|screenSize|orientation">
             <intent-filter android:label="Share on IPFS">
                 <action android:name="android.intent.action.SEND" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
-
         <activity android:name="activities.BrowseActivity">
-
             <intent-filter android:label="Browse on IPFS">
                 <action android:name="android.intent.action.PROCESS_TEXT" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="text/plain" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -65,7 +69,6 @@
                     android:host="*"
                     android:scheme="ipfs" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -76,7 +79,6 @@
                     android:host="*"
                     android:scheme="ipns" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -85,8 +87,6 @@
 
                 <data android:scheme="fs" />
             </intent-filter>
-
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -98,7 +98,6 @@
                     android:pathPattern="/ipfs/.*"
                     android:scheme="http" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -110,8 +109,6 @@
                     android:pathPattern="/ipns/.*"
                     android:scheme="http" />
             </intent-filter>
-
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -123,7 +120,6 @@
                     android:pathPattern="/ipfs/.*"
                     android:scheme="https" />
             </intent-filter>
-
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -136,7 +132,6 @@
                     android:scheme="https" />
             </intent-filter>
         </activity>
-
     </application>
 
 </manifest>
