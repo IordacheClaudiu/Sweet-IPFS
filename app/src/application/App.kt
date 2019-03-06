@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
@@ -52,6 +53,8 @@ fun Activity.clipboard(text: String) {
     val clipboard = getSystemService(AppCompatActivity.CLIPBOARD_SERVICE) as ClipboardManager
     clipboard.primaryClip = ClipData.newPlainText("text" , text)
 }
+
+fun Fragment.clipboard(text: String) = activity!!.clipboard(text)
 
 fun Activity.async(timeout: Int , runnable: () -> Any? , success: (Any) -> Unit , error: () -> Unit) = Thread {
     try {

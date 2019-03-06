@@ -17,8 +17,6 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activity_tabbar"></activity>
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAqLaZ37-19e8UV4n6BkKZyGTkXUnyvv2Y" />
@@ -36,10 +34,6 @@
             </intent-filter>
         </activity>
         <activity android:name="activities.TabsActivity"></activity>
-        <activity
-            android:name="activities.ConsoleActivity"
-            android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name="activities.ShareActivity"
             android:configChanges="screenLayout|screenSize|orientation">

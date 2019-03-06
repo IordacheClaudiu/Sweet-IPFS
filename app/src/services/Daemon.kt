@@ -99,7 +99,7 @@ class Daemon(private val ctx: Context): AnkoLogger {
         val type = when {
             Build.SUPPORTED_ABIS.contains("x86") -> "x86"
             Build.SUPPORTED_ABIS.contains("arm") -> "arm"
-            else -> return err("${ctx.getString(R.string.daemon_unsupported_arch)}: ${Build.CPU_ABI}")
+            else -> return err("${ctx.getString(R.string.daemon_unsupported_arch)}: ${Build.SUPPORTED_ABIS}")
         }
 
         // install ipfs

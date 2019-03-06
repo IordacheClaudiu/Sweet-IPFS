@@ -70,10 +70,6 @@ class MainActivity : AppCompatActivity() , AnkoLogger {
         flags += FLAG_ACTIVITY_NO_ANIMATION
         startActivity(this)
     }
-    private fun showConsoleActivity() = Intent(this , ConsoleActivity::class.java).run {
-        flags += FLAG_ACTIVITY_NO_ANIMATION
-        startActivity(this)
-    }
 
     private fun error(msg: String) = text.apply {
         text = msg
