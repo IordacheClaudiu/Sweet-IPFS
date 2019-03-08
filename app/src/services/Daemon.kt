@@ -148,14 +148,14 @@ class Daemon(private val ctx: Context): AnkoLogger {
             }
 
             // change config file
-            config.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
-                remove("LowWater")
-                addProperty("LowWater" , 20)
-                remove("HighWater")
-                addProperty("HighWater" , 40)
-                remove("GracePeriod")
-                addProperty("GracePeriod" , "120s")
-            }
+//            config.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
+//                remove("LowWater")
+//                addProperty("LowWater" , 20)
+//                remove("HighWater")
+//                addProperty("HighWater" , 40)
+//                remove("GracePeriod")
+//                addProperty("GracePeriod" , "120s")
+//            }
 
             config.remove("Bootstrap")
             val array = JsonArray(3)

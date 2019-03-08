@@ -99,7 +99,7 @@ data class IpfsVideoResource(override val id: UUID ,
 
 data class RepositoryDTO(val peer: PeerDTO) {
 
-    private var multiHashes: MutableSet<Multihash> = mutableSetOf()
+    var multiHashes: MutableSet<Multihash> = mutableSetOf()
 
     fun add(multihash: Multihash) {
         multiHashes.add(multihash)

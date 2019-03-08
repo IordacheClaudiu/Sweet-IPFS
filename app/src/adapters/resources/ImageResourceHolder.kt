@@ -61,13 +61,14 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
             try {
                 inputStream = ipfs.catStream(ipfsHash)
                 file.mimeType.notNull {
-                    debug { "Load file: $file" }
+                    info { "Load file: $file" }
                     try {
                         val bitmap = BitmapFactory.decodeStream(inputStream)
                         val maxSize = max(view.height, view.width)
                         val rescaled = Bitmap.createScaledBitmap(bitmap,maxSize, maxSize, false)
                         uiThread {
                             view.image_view.setImageBitmap(rescaled)
+                            info { "Finish load file : $file" }
                         }
                     } finally {
                         inputStream?.close()
@@ -75,7 +76,7 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
                     }
                 }
             } catch (exception: IOException) {
-
+                error { exception }
             }
         }
     }
