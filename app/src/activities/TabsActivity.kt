@@ -10,12 +10,18 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v4.content.ContextCompat
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.text.InputType
+import android.util.SparseArray
+import android.view.ViewGroup
+import android.widget.EditText
 import application.ipfs
 import fragments.FeedFragment
 import fragments.PeersFragment
@@ -23,13 +29,15 @@ import kotlinx.android.synthetic.main.activity_tabbar.*
 import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
-import services.ipfsDaemon
 import utils.Constants
+import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import utils.ResourceReceiver
 import utils.ResourceSender
 
 
 class TabsAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
+
+    private var registeredFragments = SparseArray<Fragment>()
 
     override fun getItem(position: Int): Fragment {
         return when (position) {
@@ -56,11 +64,27 @@ class TabsAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
             }
         }
     }
+
+    override fun instantiateItem(container: ViewGroup , position: Int): Any {
+        val fragment = super.instantiateItem(container , position) as Fragment
+        registeredFragments.put(position , fragment)
+        return fragment
+    }
+
+    override fun destroyItem(container: ViewGroup , position: Int , `object`: Any) {
+        registeredFragments.remove(position)
+        super.destroyItem(container , position , `object`)
+    }
+
+    fun registeredFragment(position: Int): Fragment {
+        return registeredFragments.get(position)
+    }
 }
 
-class TabsActivity : AppCompatActivity(), AnkoLogger, FeedFragment.FeedFragmentListener {
+class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmentListener {
 
     private val ctx = this as Context
+    private lateinit var tabsAdapter: TabsAdapter
 
     // Request Codes
     private val FINE_LOCATION_REQUEST_CODE = 100
@@ -94,7 +118,7 @@ class TabsActivity : AppCompatActivity(), AnkoLogger, FeedFragment.FeedFragmentL
             info { location }
             lastKnownLocation = location
             if (lastKnownLocation != null) {
-                resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null, null)
+//                resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null , null)
             }
         }
 
@@ -114,13 +138,9 @@ class TabsActivity : AppCompatActivity(), AnkoLogger, FeedFragment.FeedFragmentL
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tabbar)
-        val fragmentManager = TabsAdapter(supportFragmentManager)
-        viewpager_main.adapter = fragmentManager
+        tabsAdapter = TabsAdapter(supportFragmentManager)
+        viewpager_main.adapter = tabsAdapter
         tabs_main.setupWithViewPager(viewpager_main)
-    }
-
-    override fun onResume() {
-        super.onResume()
         setupLocationManager()
         setupCurrentPeer()
     }
@@ -145,7 +165,7 @@ class TabsActivity : AppCompatActivity(), AnkoLogger, FeedFragment.FeedFragmentL
             READ_DOCUMENT_REQUEST_CODE -> {
                 rdata?.data?.also { uri ->
                     info { "Uri: $uri" }
-                    resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , uri , null, null)
+                    resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , uri , null , null)
                 }
             }
         }
@@ -182,15 +202,34 @@ class TabsActivity : AppCompatActivity(), AnkoLogger, FeedFragment.FeedFragmentL
     }
 
     override fun feedFragmentOnAddFilePressed(fragment: FeedFragment) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            startActivityForResult(this , READ_DOCUMENT_REQUEST_CODE)
+        }
     }
 
     override fun feedFragmentOnAddImagePressed(fragment: FeedFragment) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            takePictureIntent.resolveActivity(packageManager)?.also {
+                startActivityForResult(takePictureIntent , IMAGE_CAPTURE_REQUEST_CODE)
+            }
+        }
     }
 
     override fun feedFragmentOnAddTextPressed(fragment: FeedFragment) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        AlertDialog.Builder(ctx).apply {
+            setTitle(getString(R.string.title_add_text))
+            val txt = EditText(ctx).apply {
+                inputType = InputType.TYPE_CLASS_TEXT
+                setView(this)
+            }
+            setPositiveButton(getString(R.string.apply)) { _ , _ ->
+                resourceSender?.send(IPFS_PUB_SUB_CHANNEL , txt.text.toString() , null , null)
+            }
+            setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
+        }.show()
+
     }
 
     private fun setupLocationManager() {
@@ -224,13 +263,15 @@ class TabsActivity : AppCompatActivity(), AnkoLogger, FeedFragment.FeedFragmentL
                     val peer = PeerDTO(username , device , os , list)
                     resourceSender = ResourceSender(ctx , peer , ipfs)
                     if (lastKnownLocation != null) {
-                        resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null, null)
+                        resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null , null)
                     }
                     resourceReceiver = ResourceReceiver(ctx , ipfs)
                     resourceReceiver?.subscribeTo(Constants.IPFS_PUB_SUB_CHANNEL , { resource ->
-                        //TODO: send to feed fragment
-//                        adapter.add(resource)
-
+                        val position = viewpager_main.currentItem
+                        val fragment = tabsAdapter.registeredFragment(position)
+                        if (fragment is FeedFragment) {
+                            fragment.add(resource)
+                        }
                     } , { ex ->
                         error { ex }
                     })

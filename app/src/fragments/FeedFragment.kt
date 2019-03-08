@@ -123,12 +123,14 @@ class FeedFragment : Fragment() , AnkoLogger {
                                     it.id.toString()
                                 })
                             }
-                            AlertDialog.Builder(mContext).apply {
-                                setTitle(getString(R.string.menu_peers))
-                                setMessage(representation)
-                                setNeutralButton(getString(R.string.close)) { _ , _ -> }
-                            }.show()
                             info { "Swarm Peers success." }
+                            uiThread {
+                                AlertDialog.Builder(mContext).apply {
+                                    setTitle(getString(R.string.menu_peers))
+                                    setMessage(representation)
+                                    setNeutralButton(getString(R.string.close)) { _ , _ -> }
+                                }.show()
+                            }
                         });true
                     }
 
@@ -268,24 +270,6 @@ class FeedFragment : Fragment() , AnkoLogger {
                                 setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
                             }.show(); true
                         }
-                        add("Listen").setOnMenuItemClickListener {
-                            doAsync {
-                                val sub = ipfs.pubsub.sub("topic")
-                                ipfs.pubsub.sub("topic" , Consumer {
-                                    print(it)
-                                } , Consumer {
-                                    print(it)
-                                })
-                                ipfs.pubsub.pub("topic" , "mobile1")
-                                ipfs.pubsub.pub("topic" , "mobile2")
-                                val results = sub.limit(2).collect(Collectors.toList())
-                                uiThread {
-                                    print(results)
-                                }
-                            }
-                            true;
-                        }
-
                     }
                 }
             }.show()

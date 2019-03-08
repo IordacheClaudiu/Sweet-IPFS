@@ -1,5 +1,6 @@
 package adapters.resources
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.view.View
 import io.ipfs.api.IPFS
@@ -12,6 +13,7 @@ import utils.date.TimeAgo
 import utils.notNull
 import java.io.IOException
 import java.io.InputStream
+import kotlin.math.max
 
 
 class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<IpfsImageResource>(v) {
@@ -38,7 +40,7 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
     }
 
     override fun viewRecycled() {
-        view.image_view.visibility = View.VISIBLE
+        view.image_view.setImageBitmap(null)
         inputStream?.let {
             if (it.available() != 0) {
             try {
@@ -62,8 +64,10 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
                     debug { "Load file: $file" }
                     try {
                         val bitmap = BitmapFactory.decodeStream(inputStream)
+                        val maxSize = max(view.height, view.width)
+                        val rescaled = Bitmap.createScaledBitmap(bitmap,maxSize, maxSize, false)
                         uiThread {
-                            view.image_view.setImageBitmap(bitmap)
+                            view.image_view.setImageBitmap(rescaled)
                         }
                     } finally {
                         inputStream?.close()

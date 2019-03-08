@@ -169,7 +169,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     // Create temp file from bitmap
     private val Bitmap.tempFile: File?
         get() {
-            val file = File(context.cacheDir , "temp")
+            val file = File(context.cacheDir , "temp.jpg")
             val outStream = FileOutputStream(file)
             compress(Bitmap.CompressFormat.JPEG , 75 , outStream)
             outStream.close()
@@ -203,8 +203,8 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
                 val fileExtension = MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(File(path)).toString())
                 return MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
             }
-            val mime = MimeTypeMap.getSingleton();
-            return mime.getExtensionFromMimeType(context.contentResolver.getType(this));
+            val mime = MimeTypeMap.getSingleton()
+            return mime.getExtensionFromMimeType(context.contentResolver.getType(this))
         }
 
     // Retrieve uri name
