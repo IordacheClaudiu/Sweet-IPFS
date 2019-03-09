@@ -2,7 +2,7 @@ package adapters.resources
 
 import android.support.v7.widget.RecyclerView
 import android.view.View
-import kotlinx.android.synthetic.main.reciclerview_text_row.view.*
+import kotlinx.android.synthetic.main.recyclerview_text_row.view.*
 import models.IIpfsResource
 import models.IpfsTextResource
 import org.jetbrains.anko.AnkoLogger

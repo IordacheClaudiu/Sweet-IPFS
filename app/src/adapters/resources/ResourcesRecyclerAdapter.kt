@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import io.ipfs.api.IPFS
 import models.*
 import ro.uaic.info.ipfs.R
-import utils.notNull
 
 class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: MutableList<IIpfsResource>) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -15,22 +14,22 @@ class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: M
         when (viewType) {
             IpfsResourceType.LOCATION.ordinal -> {
                 val inflatedView = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.reciclerview_location_row , parent , false) as View
+                        .inflate(R.layout.recyclerview_location_row , parent , false) as View
                 return LocationResourceHolder(inflatedView)
             }
             IpfsResourceType.IMAGE.ordinal -> {
                 val inflatedView = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.reciclerview_binary_row , parent , false) as View
+                        .inflate(R.layout.recyclerview_binary_row , parent , false) as View
                 return ImageResourceHolder(inflatedView , ipfs)
             }
             IpfsResourceType.VIDEO.ordinal -> {
                 val inflatedView = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.reciclerview_video_row , parent , false) as View
+                        .inflate(R.layout.recyclerview_video_row , parent , false) as View
                 return VideoResourceHolder(inflatedView , ipfs)
             }
             else -> {
                 val inflatedView = LayoutInflater.from(parent.context)
-                        .inflate(R.layout.reciclerview_text_row , parent , false) as View
+                        .inflate(R.layout.recyclerview_text_row , parent , false) as View
                 return TextResourceHolder(inflatedView)
             }
         }

@@ -4,7 +4,7 @@ import android.net.Uri
 import android.view.View
 import io.ipfs.api.IPFS
 import io.ipfs.multihash.Multihash
-import kotlinx.android.synthetic.main.reciclerview_video_row.view.*
+import kotlinx.android.synthetic.main.recyclerview_video_row.view.*
 import models.IpfsVideoResource
 import org.jetbrains.anko.info
 import utils.date.TimeAgo

@@ -295,7 +295,34 @@ class FeedFragment : Fragment() , AnkoLogger {
                     add(getString(R.string.menu_pins)).setOnMenuItemClickListener { notimpl() }
                     add(getString(R.string.menu_keys)).setOnMenuItemClickListener { notimpl() }
                     addSubMenu(getString(R.string.menu_swarm)).apply {
-                        add(getString(R.string.menu_swarm_connect)).setOnMenuItemClickListener { notimpl() }
+                        add(getString(R.string.menu_swarm_connect)).setOnMenuItemClickListener {
+                            AlertDialog.Builder(mContext).apply {
+                                val txtView = EditText(mContext).apply {
+                                    inputType = InputType.TYPE_CLASS_TEXT
+                                    setView(this)
+                                }
+                                setPositiveButton(getString(R.string.apply)) { _ , _ ->
+                                    val txtInput = txtView.text.toString()
+                                    if (txtInput.isBlank()) {
+                                        return@setPositiveButton
+                                    }
+                                    val nodeAddress: MultiAddress
+                                    try {
+                                        nodeAddress = MultiAddress(txtInput)
+                                    } catch (e: IllegalStateException) {
+                                        info { "Swarm add peer error:" + e.localizedMessage }
+                                        return@setPositiveButton
+                                    }
+                                    doAsync({
+                                        info { "Swarm add peer error: " + it.localizedMessage }
+                                    } , {
+                                        ipfs.swarm.connect(nodeAddress)
+                                        info { "Swarm add peer success." }
+                                    })
+                                }.show()
+                            }
+                            true
+                        }
                         add(getString(R.string.menu_swarm_disconnect)).setOnMenuItemClickListener { notimpl() }
                     }
                     addSubMenu(getString(R.string.menu_dht)).apply {

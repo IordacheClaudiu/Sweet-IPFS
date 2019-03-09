@@ -6,7 +6,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapsInitializer
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.MarkerOptions
-import kotlinx.android.synthetic.main.reciclerview_location_row.view.*
+import kotlinx.android.synthetic.main.recyclerview_location_row.view.*
 import models.IpfsLocationResource
 import org.jetbrains.anko.info
 import utils.date.TimeAgo

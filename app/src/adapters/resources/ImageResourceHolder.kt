@@ -5,7 +5,7 @@ import android.graphics.BitmapFactory
 import android.view.View
 import io.ipfs.api.IPFS
 import io.ipfs.multihash.Multihash
-import kotlinx.android.synthetic.main.reciclerview_binary_row.view.*
+import kotlinx.android.synthetic.main.recyclerview_binary_row.view.*
 import models.FileDTO
 import models.IpfsImageResource
 import org.jetbrains.anko.*
