@@ -95,10 +95,17 @@ class Daemon(private val ctx: Context): AnkoLogger {
 
     private fun install(callback: () -> Unit , err: (String) -> Unit = {}) {
         val act = ctx as? Activity ?: return
+        info { Build.SUPPORTED_ABIS.joinToString { "," } }
+        val x86Arch  = Build.SUPPORTED_ABIS.indexOfFirst {
+            it.startsWith("x86")
+        } != -1
+        val armArch =  Build.SUPPORTED_ABIS.indexOfFirst {
+            it.startsWith("arm")
+        } != -1
 
         val type = when {
-            Build.SUPPORTED_ABIS.contains("x86") -> "x86"
-            Build.SUPPORTED_ABIS.contains("arm") -> "arm"
+            x86Arch -> "x86"
+            armArch -> "arm"
             else -> return err("${ctx.getString(R.string.daemon_unsupported_arch)}: ${Build.SUPPORTED_ABIS}")
         }
 
@@ -159,7 +166,7 @@ class Daemon(private val ctx: Context): AnkoLogger {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/52.34.30.22/tcp/4001/ipfs/QmQgSf59ZrMxt6uXWha4x1dSkUP2jNjPL9vrWtRSytpfqb")
+            array.add("/ip4/54.244.216.255/tcp/4001/ipfs/QmQgSf59ZrMxt6uXWha4x1dSkUP2jNjPL9vrWtRSytpfqb")
             array.add("/ip4/54.189.160.162/tcp/4001/ipfs/QmbYQZteYjKLsfEJhg5tnTcTdAKAeutU7ABBsNX3miu5g2")
             array.add("/ip4/54.214.110.255/tcp/4001/ipfs/QmZjm3bQrFgcGJ8o9rzkEEe5pmF7xG3KBc86WprnXXwYgz")
             config.add("Bootstrap" , array)
