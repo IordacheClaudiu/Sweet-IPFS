@@ -155,18 +155,18 @@ class Daemon(private val ctx: Context): AnkoLogger {
             }
 
             // change config file
-//            config.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
-//                remove("LowWater")
-//                addProperty("LowWater" , 20)
-//                remove("HighWater")
-//                addProperty("HighWater" , 40)
-//                remove("GracePeriod")
-//                addProperty("GracePeriod" , "120s")
-//            }
+            config.getAsJsonObject("Swarm").getAsJsonObject("ConnMgr").apply {
+                remove("LowWater")
+                addProperty("LowWater" , 20)
+                remove("HighWater")
+                addProperty("HighWater" , 40)
+                remove("GracePeriod")
+                addProperty("GracePeriod" , "120s")
+            }
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/54.244.216.255/tcp/4001/ipfs/QmQgSf59ZrMxt6uXWha4x1dSkUP2jNjPL9vrWtRSytpfqb")
+            array.add("/ip4/52.40.37.176/tcp/4001/ipfs/QmQgSf59ZrMxt6uXWha4x1dSkUP2jNjPL9vrWtRSytpfqb")
             array.add("/ip4/54.189.160.162/tcp/4001/ipfs/QmbYQZteYjKLsfEJhg5tnTcTdAKAeutU7ABBsNX3miu5g2")
             array.add("/ip4/54.214.110.255/tcp/4001/ipfs/QmZjm3bQrFgcGJ8o9rzkEEe5pmF7xG3KBc86WprnXXwYgz")
             config.add("Bootstrap" , array)

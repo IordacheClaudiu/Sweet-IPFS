@@ -26,16 +26,23 @@
             android:exported="false"
             android:stopWithTask="false" />
 
-        <activity android:name="activities.MainActivity">
+        <activity android:name="activities.MainActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="activities.TabsActivity"></activity>
-        <activity
-            android:name="activities.ShareActivity"
+
+        <activity android:name="activities.TabsActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden"
+            />
+
+        <activity android:name="activities.ShareActivity"
+            android:screenOrientation="portrait"
             android:configChanges="screenLayout|screenSize|orientation">
             <intent-filter android:label="Share on IPFS">
                 <action android:name="android.intent.action.SEND" />
@@ -45,7 +52,10 @@
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
-        <activity android:name="activities.BrowseActivity">
+
+        <activity android:name="activities.BrowseActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden">
             <intent-filter android:label="Browse on IPFS">
                 <action android:name="android.intent.action.PROCESS_TEXT" />
 
@@ -126,6 +136,7 @@
                     android:scheme="https" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
