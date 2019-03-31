@@ -11,18 +11,14 @@ import models.IpfsImageResource
 import org.jetbrains.anko.*
 import utils.date.TimeAgo
 import utils.notNull
-import utils.resizeByWidth
 import java.io.IOException
-import java.io.InputStream
 import java.util.concurrent.Future
-import kotlin.math.max
 
 
-class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<IpfsImageResource>(v) {
+class ImageResourceHolder(v: View , private val ipfs: IPFS, private val maxImageWidth: Int) : ResourceHolder<IpfsImageResource>(v) {
 
     private var view: View = v
     private var imageLoadingFuture: Future<Unit>? = null
-
     override lateinit var resource: IpfsImageResource
 
     init {
@@ -37,6 +33,16 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
         super.bind(resource)
         view.peer_name.text = resource.peer.username
         view.peer_system.text = resource.peer.os + " " + resource.peer.device
+        if (resource.size != null) {
+            val size = resource.size!!
+            var aspectRatio = maxImageWidth.toFloat() / size.width
+            val newHeight = size.height * aspectRatio
+            view.image_view.layoutParams.height = newHeight.toInt()
+            view.image_view.requestLayout()
+        } else {
+            view.image_view.layoutParams.height = 150
+            view.image_view.requestLayout()
+        }
         refreshTimeAgo()
         loadBinary(resource.file)
     }
@@ -61,7 +67,7 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
                     info { "Load file: $file" }
                     try {
                         val bitmap = BitmapFactory.decodeStream(inputStream)
-                        val rescaled = bitmap.resizeByWidth(view.width)
+                        val rescaled = Bitmap.createScaledBitmap(bitmap, view.image_view.width, view.image_view.height, false)
                         uiThread {
                             view.image_view.setImageBitmap(rescaled)
                             info { "Finish load file : $file" }

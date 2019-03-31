@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.location.Location
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Size
 import android.webkit.MimeTypeMap
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonIOException
@@ -60,7 +61,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     fun send(channel: String , uri: Uri , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         val uriTempFile = uri.tempFile
         uriTempFile.notNull({
-            storeAndSendResourceFile(channel , it , onSuccess , onError)
+            storeAndSendResourceFile(channel , it , it.imageSize() , onSuccess , onError)
         } , {
             val fileCreationException = FileCreationException("File from ${uri.path} could not be created.")
             error { "Cannot store and send from $uri" }
@@ -71,7 +72,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
     fun send(channel: String , bitmap: Bitmap , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         val bitmapTempFile = bitmap.tempFile
         bitmapTempFile.notNull({
-            storeAndSendResourceFile(channel , it , onSuccess , onError)
+            storeAndSendResourceFile(channel , it , Size(bitmap.width, bitmap.height), onSuccess , onError)
         } , {
             val fileCreationException = FileCreationException("Bitmap could not be created.")
             error { fileCreationException }
@@ -80,7 +81,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
 
     }
 
-    private fun storeAndSendResourceFile(channel: String , file: File , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
+    private fun storeAndSendResourceFile(channel: String , file: File , size: Size? = null , onSuccess: ((Multihash) -> Unit)? , onError: ((Exception) -> Unit)?) {
         addFile(file) {
             val fileDTO = FileDTO(file.name , Uri.fromFile(file).mimeType , it.toString())
             val mimeType = fileDTO.mimeType
@@ -91,7 +92,7 @@ class ResourceSender(val context: Context , val peer: PeerDTO , val ipfs: IPFS) 
                         resource = IpfsVideoResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO)
                     }
                     it.startsWith("image") -> {
-                        resource = IpfsImageResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO)
+                        resource = IpfsImageResource(UUID.randomUUID() , peer , DateUtils.GMT.time() , fileDTO, size)
                     }
                 }
                 resource.notNull {

@@ -1,6 +1,7 @@
 package models
 
 import android.location.Location
+import android.util.Size
 import io.ipfs.multihash.Multihash
 import java.io.Serializable
 import java.util.*
@@ -71,7 +72,8 @@ data class IpfsLocationResource(override val id: UUID ,
 data class IpfsImageResource(override val id: UUID ,
                              override val peer: PeerDTO ,
                              override val timestamp: Date ,
-                             val file: FileDTO) : IIpfsResource {
+                             val file: FileDTO,
+                             val size: Size?) : IIpfsResource {
     override val type = IpfsResourceType.IMAGE
 
     override fun equals(other: Any?): Boolean {

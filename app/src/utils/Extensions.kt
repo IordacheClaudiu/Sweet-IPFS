@@ -3,8 +3,14 @@ package utils
 import android.graphics.Bitmap
 import android.location.Location
 import android.util.Base64
+import android.util.Size
 import com.google.android.gms.maps.model.LatLng
 import io.ipfs.multihash.Multihash
+import java.io.File
+import android.R.attr.path
+import android.graphics.BitmapFactory
+
+
 
 // String
 fun String.decode(): String {
@@ -34,6 +40,18 @@ fun Location.latLng(): LatLng {
 
 fun Multihash.public(): String {
     return "https://ipfs.io/ipfs/${this}"
+}
+
+
+fun File.imageSize(): Size? {
+    val options = BitmapFactory.Options()
+    options.inJustDecodeBounds = true
+    BitmapFactory.decodeFile(absolutePath, options)
+    if (options.outWidth != - 1 && options.outHeight != - 1) {
+        return Size(options.outWidth, options.outHeight)
+    } else {
+        return null
+    }
 }
 
 // Extension function to resize bitmap using new width value by keeping aspect ratio

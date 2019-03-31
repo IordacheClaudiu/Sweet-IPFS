@@ -2,7 +2,9 @@ package fragments
 
 import adapters.peers.PeersRecyclerAdapter
 import android.content.Context
+import android.os.AsyncTask
 import android.os.Bundle
+import android.os.Looper
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
@@ -52,10 +54,14 @@ class PeersFragment : Fragment() , AnkoLogger {
     }
 
     private fun refreshPeers() {
-
         doAsync({
             error { it }
-            swipe_container.isRefreshing = false
+            doAsync {
+                uiThread {
+                    adapter.clear()
+                    swipe_container.isRefreshing = false
+                }
+            }
         } , {
             val peers = ipfs.swarm.peers()
             uiThread {

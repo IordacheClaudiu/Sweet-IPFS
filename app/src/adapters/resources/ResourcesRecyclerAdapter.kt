@@ -20,7 +20,7 @@ class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: M
             IpfsResourceType.IMAGE.ordinal -> {
                 val inflatedView = LayoutInflater.from(parent.context)
                         .inflate(R.layout.recyclerview_binary_row , parent , false) as View
-                return ImageResourceHolder(inflatedView , ipfs)
+                return ImageResourceHolder(inflatedView , ipfs, parent.width)
             }
             IpfsResourceType.VIDEO.ordinal -> {
                 val inflatedView = LayoutInflater.from(parent.context)
