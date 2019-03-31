@@ -98,12 +98,12 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
     private val device by lazy {
         val manufacturer = Build.MANUFACTURER
         val model = Build.MODEL
-        listOf(manufacturer , model).joinToString(",")
+        listOf(manufacturer , model).joinToString(" ")
     }
     private val os by lazy {
         val version = Build.VERSION.SDK_INT
         val versionRelease = Build.VERSION.RELEASE
-        listOf(version , versionRelease).joinToString(",")
+        listOf(version , versionRelease).joinToString(" - ")
     }
     private var resourceSender: ResourceSender? = null
     private var resourceReceiver: ResourceReceiver? = null
@@ -118,7 +118,7 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
             info { location }
             lastKnownLocation = location
             if (lastKnownLocation != null) {
-//                resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null , null)
+                resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null , null)
             }
         }
 

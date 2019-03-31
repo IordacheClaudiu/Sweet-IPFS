@@ -18,6 +18,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.debug
 import org.jetbrains.anko.error
 import org.jetbrains.anko.info
 import ro.uaic.info.ipfs.R
@@ -28,7 +29,6 @@ import java.io.FileReader
 val Context.ipfsDaemon get() = Daemon(this)
 
 class Daemon(private val ctx: Context): AnkoLogger {
-    private val LOG_TAG = Daemon::class.java.name
     private val store by lazy { ctx.getExternalFilesDir(null)["ipfs"] }
     private val bin by lazy { ctx.filesDir["ipfsbin"] }
     private val version by lazy { ctx.getExternalFilesDir(null)["version"] }
@@ -132,10 +132,10 @@ class Daemon(private val ctx: Context): AnkoLogger {
         Thread {
             val exec = run("init")
             Thread {
-                exec.inputStream.bufferedReader().forEachLine { Log.d(LOG_TAG , it) }
+                exec.inputStream.bufferedReader().forEachLine { debug { it } }
             }.start()
             Thread {
-                exec.errorStream.bufferedReader().forEachLine { Log.d(LOG_TAG , it) }
+                exec.errorStream.bufferedReader().forEachLine { debug { it } }
             }.start()
             exec.waitFor()
 
@@ -166,7 +166,7 @@ class Daemon(private val ctx: Context): AnkoLogger {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/52.40.37.176/tcp/4001/ipfs/QmQgSf59ZrMxt6uXWha4x1dSkUP2jNjPL9vrWtRSytpfqb")
+            array.add("/ip4/52.40.37.176/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf")
             array.add("/ip4/54.189.160.162/tcp/4001/ipfs/QmbYQZteYjKLsfEJhg5tnTcTdAKAeutU7ABBsNX3miu5g2")
             array.add("/ip4/54.214.110.255/tcp/4001/ipfs/QmZjm3bQrFgcGJ8o9rzkEEe5pmF7xG3KBc86WprnXXwYgz")
             config.add("Bootstrap" , array)

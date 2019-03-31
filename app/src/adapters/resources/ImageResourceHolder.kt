@@ -11,15 +11,17 @@ import models.IpfsImageResource
 import org.jetbrains.anko.*
 import utils.date.TimeAgo
 import utils.notNull
+import utils.resizeByWidth
 import java.io.IOException
 import java.io.InputStream
+import java.util.concurrent.Future
 import kotlin.math.max
 
 
 class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<IpfsImageResource>(v) {
 
     private var view: View = v
-    private var inputStream: InputStream? = null
+    private var imageLoadingFuture: Future<Unit>? = null
 
     override lateinit var resource: IpfsImageResource
 
@@ -41,14 +43,9 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
 
     override fun viewRecycled() {
         view.image_view.setImageBitmap(null)
-        inputStream?.let {
-            if (it.available() != 0) {
-            try {
-                it.close()
-            } catch (exception: IOException) {
-                error { "Failed to close inputstream" }
-            }
-        } }
+        imageLoadingFuture?.let {
+            it.cancel(true)
+        }
     }
 
     override fun refreshTimeAgo() {
@@ -57,22 +54,20 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
 
     private fun loadBinary(file: FileDTO) {
         val ipfsHash = Multihash.fromBase58(file.hash)
-        doAsync {
+        imageLoadingFuture = doAsync {
             try {
-                inputStream = ipfs.catStream(ipfsHash)
+                val inputStream = ipfs.catStream(ipfsHash)
                 file.mimeType.notNull {
                     info { "Load file: $file" }
                     try {
                         val bitmap = BitmapFactory.decodeStream(inputStream)
-                        val maxSize = max(view.height, view.width)
-                        val rescaled = Bitmap.createScaledBitmap(bitmap,maxSize, maxSize, false)
+                        val rescaled = bitmap.resizeByWidth(view.width)
                         uiThread {
                             view.image_view.setImageBitmap(rescaled)
                             info { "Finish load file : $file" }
                         }
                     } finally {
                         inputStream?.close()
-                        inputStream = null
                     }
                 }
             } catch (exception: IOException) {

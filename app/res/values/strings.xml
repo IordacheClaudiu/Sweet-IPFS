@@ -87,4 +87,6 @@
     <string name="title_add_folder">Add folder to IPFS</string>
     <string name="title_add_text">Add text to IPFS</string>
     <string name="main_username_hint">Input for username</string>
+    <string name="empty_feed_text">No feeds available.</string>>
+    <string name="empty_peers_text">No peers connected.</string>
 </resources>

@@ -24,6 +24,7 @@ import org.jetbrains.anko.info
 import org.jetbrains.anko.uiThread
 import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
+import utils.RVEmptyObserver
 import java.io.IOException
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -80,6 +81,7 @@ class FeedFragment : Fragment() , AnkoLogger {
         val resources: MutableList<IIpfsResource> = mutableListOf()
         adapter = ResourcesRecyclerAdapter(ipfs , resources)
         recyclerView.adapter = adapter
+        adapter.registerAdapterDataObserver(RVEmptyObserver(recyclerView, emptyView))
     }
 
     private fun setupConfigBtn() {

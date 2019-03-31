@@ -9,13 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import application.ipfs
-import io.ipfs.multihash.Multihash
 import kotlinx.android.synthetic.main.fragment_peers.*
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.info
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
+import utils.RVEmptyObserver
 
 class PeersFragment : Fragment() , AnkoLogger {
 
@@ -33,7 +30,7 @@ class PeersFragment : Fragment() , AnkoLogger {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         swipe_container.setOnRefreshListener {
-               refreshPeers()
+            refreshPeers()
         }
 
         setupRecyclerView()
@@ -55,7 +52,11 @@ class PeersFragment : Fragment() , AnkoLogger {
     }
 
     private fun refreshPeers() {
-        doAsync( {} , {
+
+        doAsync({
+            error { it }
+            swipe_container.isRefreshing = false
+        } , {
             val peers = ipfs.swarm.peers()
             uiThread {
                 adapter.clear()
@@ -68,8 +69,8 @@ class PeersFragment : Fragment() , AnkoLogger {
     private fun setupRecyclerView() {
         linearLayoutManager = LinearLayoutManager(mContext)
         recyclerView.layoutManager = linearLayoutManager
-        val peers: MutableList<Multihash> = mutableListOf()
         adapter = PeersRecyclerAdapter(ipfs)
         recyclerView.adapter = adapter
+        adapter.registerAdapterDataObserver(RVEmptyObserver(recyclerView, emptyView))
     }
 }
