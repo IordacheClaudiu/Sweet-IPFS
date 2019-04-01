@@ -1,5 +1,6 @@
 package adapters.resources
 
+import android.support.v7.util.DiffUtil
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -83,11 +84,14 @@ class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: M
 
     fun add(newResource: IIpfsResource) {
         if (!resources.contains(newResource)) {
+            val oldResources = resources.toList()
             resources.add(newResource)
             resources.sortByDescending {
                 it.timestamp.time
             }
-            notifyDataSetChanged()
+            val newResources = resources.toList()
+            val diffResult = DiffUtil.calculateDiff(ResourcesDiffUtilCallback(newResources, oldResources))
+            diffResult.dispatchUpdatesTo(this)
         }
     }
 }
