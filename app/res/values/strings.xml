@@ -89,4 +89,6 @@
     <string name="main_username_hint">Input for username</string>
     <string name="empty_feed_text">No feeds available.</string>>
     <string name="empty_peers_text">No peers connected.</string>
+    <string name="feed_new_items_text">New item available.</string>
+    <string name="feed_new_items_refresh">Refresh</string>
 </resources>
