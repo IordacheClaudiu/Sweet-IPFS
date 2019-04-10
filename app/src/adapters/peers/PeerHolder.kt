@@ -7,6 +7,7 @@ import io.ipfs.api.IPFS
 import io.ipfs.api.Peer
 import io.ipfs.multihash.Multihash
 import kotlinx.android.synthetic.main.recyclerview_peer_row.view.*
+import models.PeerDTO
 import models.RepositoryDTO
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.doAsync
@@ -18,21 +19,26 @@ enum class State {
     LOADING, ERROR, EMPTY, DATA
 }
 
-
 class PeerHolder(v: View , private val ipfs: IPFS): RecyclerView.ViewHolder(v) , View.OnClickListener , AnkoLogger {
 
     private var view: View = v
     lateinit var peer: Peer
+    lateinit var listener: OnPeerClickListener
     private var asyncUnit: Future<Unit>? = null
     private var nrOfFiles: Int? = null
 
-    override fun onClick(v: View?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    init {
+        v.setOnClickListener(this)
     }
 
-    fun bind(peer: Peer) {
+    override fun onClick(v: View?) {
+        listener.onPeerClick(peer)
+    }
+
+    fun bind(peer: Peer, listener: OnPeerClickListener) {
         asyncUnit?.let { it.cancel(true) }
         this.peer = peer
+        this.listener = listener
         updateUI()
     }
 

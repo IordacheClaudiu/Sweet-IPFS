@@ -7,4 +7,6 @@ object Constants {
     const val IPFS_PUB_SUB_DATA = "data"
 
     const val IPFS_RESOURCE_TYPE_KEY = "type"
+
+    const val INTENT_USER_HASH = "intent_user_hash"
 }

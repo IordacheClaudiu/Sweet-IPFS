@@ -25,11 +25,13 @@ import android.widget.EditText
 import application.ipfs
 import fragments.FeedFragment
 import fragments.PeersFragment
+import io.ipfs.api.Peer
 import kotlinx.android.synthetic.main.activity_tabbar.*
 import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
 import utils.Constants
+import utils.Constants.INTENT_USER_HASH
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import utils.ResourceReceiver
 import utils.ResourceSender
@@ -81,7 +83,7 @@ class TabsAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
     }
 }
 
-class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmentListener {
+class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmentListener, PeersFragment.PeersFragmentListener {
 
     private val ctx = this as Context
     private lateinit var tabsAdapter: TabsAdapter
@@ -230,6 +232,13 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
             setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
         }.show()
 
+    }
+
+    override fun peersFragmentOnPeerPressed(fragment: PeersFragment , peer: Peer) {
+        val intent = Intent(this, ResourcesActivity::class.java).apply {
+            putExtra(INTENT_USER_HASH, peer.id.toBase58())
+        }
+        startActivity(intent)
     }
 
     private fun setupLocationManager() {

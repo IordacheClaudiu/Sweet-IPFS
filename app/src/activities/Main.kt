@@ -2,7 +2,7 @@ package activities
 
 import android.Manifest.permission.*
 import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_NO_ANIMATION
+import android.content.Intent.*
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.View
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() , AnkoLogger {
             val dialog = indeterminateProgressDialog(message = "Please wait a bit…", title = "Starting daemon")
             ipfsDaemon.refresh({
                 dialog.dismiss()
-               showTabsActivity()
+                showTabsActivity()
             }, {
                 dialog.dismiss()
                 alert { it.message }.show()
@@ -59,6 +59,8 @@ class MainActivity : AppCompatActivity() , AnkoLogger {
                         if (! (ipfsDaemon.binaryCopied() && ipfsDaemon.nodeInitialized() && ipfsDaemon.daemonIsRunning())) {
                             listOf(startbtn).forEach { (it as View).visibility = VISIBLE }
                             info { "Daemon fully initialized." }
+                        } else {
+                            showTabsActivity()
                         }
                     } else {
                         error("IPFS requires INTERNET, WRITE_EXTERNAL_STORAGE and READ_EXTERNAL_STORAGE")
@@ -68,7 +70,10 @@ class MainActivity : AppCompatActivity() , AnkoLogger {
 
     private fun showTabsActivity() = Intent(this, TabsActivity::class.java).run {
         flags += FLAG_ACTIVITY_NO_ANIMATION
+        flags += FLAG_ACTIVITY_CLEAR_TOP
+        flags += FLAG_ACTIVITY_NEW_TASK
         startActivity(this)
+        finish()
     }
 
     private fun error(msg: String) = text.apply {

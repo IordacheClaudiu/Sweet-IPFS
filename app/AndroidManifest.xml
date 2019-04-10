@@ -41,6 +41,10 @@
             android:configChanges="orientation|keyboardHidden"
             />
 
+        <activity android:name="activities.ResourcesActivity"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden"/>
+
         <activity android:name="activities.ShareActivity"
             android:screenOrientation="portrait"
             android:configChanges="screenLayout|screenSize|orientation">

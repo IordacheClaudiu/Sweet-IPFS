@@ -1,5 +1,6 @@
 package fragments
 
+import adapters.peers.OnPeerClickListener
 import adapters.peers.PeersRecyclerAdapter
 import android.content.Context
 import android.os.AsyncTask
@@ -11,14 +12,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import application.ipfs
+import io.ipfs.api.Peer
 import kotlinx.android.synthetic.main.fragment_peers.*
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
 import utils.RVEmptyObserver
 
-class PeersFragment : Fragment() , AnkoLogger {
+class PeersFragment : Fragment() , AnkoLogger, OnPeerClickListener {
+
+    interface PeersFragmentListener {
+        fun peersFragmentOnPeerPressed(fragment: PeersFragment, peer: Peer)
+    }
 
     private var mContext: Context? = null
+    var delegate: PeersFragmentListener? = null
 
     // UI
     private lateinit var linearLayoutManager: LinearLayoutManager
@@ -43,6 +50,9 @@ class PeersFragment : Fragment() , AnkoLogger {
     override fun onAttach(context: Context?) {
         super.onAttach(context)
         mContext = context
+        if (context is PeersFragmentListener) {
+            delegate = context
+        }
         info { "onAttach" }
     }
 
@@ -51,6 +61,10 @@ class PeersFragment : Fragment() , AnkoLogger {
         super.onDetach()
         mContext = null
         info { "onDetach" }
+    }
+
+    override fun onPeerClick(peer: Peer) {
+        delegate?.peersFragmentOnPeerPressed(this, peer)
     }
 
     private fun refreshPeers() {
@@ -75,7 +89,7 @@ class PeersFragment : Fragment() , AnkoLogger {
     private fun setupRecyclerView() {
         linearLayoutManager = LinearLayoutManager(mContext)
         recyclerView.layoutManager = linearLayoutManager
-        adapter = PeersRecyclerAdapter(ipfs)
+        adapter = PeersRecyclerAdapter(ipfs, this)
         recyclerView.adapter = adapter
         adapter.registerAdapterDataObserver(RVEmptyObserver(recyclerView, emptyView))
     }

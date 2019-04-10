@@ -8,9 +8,14 @@ import android.view.View
 import android.view.ViewGroup
 import io.ipfs.api.IPFS
 import io.ipfs.api.Peer
+import models.PeerDTO
 import ro.uaic.info.ipfs.R
 
-class PeersRecyclerAdapter(private val ipfs: IPFS) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+interface OnPeerClickListener {
+    fun onPeerClick(peer: Peer)
+}
+
+class PeersRecyclerAdapter(private val ipfs: IPFS, private val listener: OnPeerClickListener) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var mPeers: SortedList<Peer>
 
@@ -33,7 +38,7 @@ class PeersRecyclerAdapter(private val ipfs: IPFS) : RecyclerView.Adapter<Recycl
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder , position: Int) {
         val peerHash = mPeers[position]
         when(holder) {
-            is PeerHolder -> holder.bind(peerHash)
+            is PeerHolder -> holder.bind(peerHash, listener)
         }
     }
 
