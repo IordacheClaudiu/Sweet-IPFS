@@ -36,6 +36,7 @@ class ImageResourceHolder(v: View , private val ipfs: IPFS , private val maxImag
         super.bind(resource)
         view.peer_name.text = resource.peer.username
         view.peer_system.text = resource.peer.os + " " + resource.peer.device
+        view.resource_hash.text = resource.file.hash
         if (resource.size != null) {
             val size = resource.size !!
             var aspectRatio = maxImageWidth.toFloat() / size.width

@@ -38,6 +38,7 @@ class VideoResourceHolder(v: View , private val ipfs: IPFS) : ResourceHolder<Ipf
         refreshTimeAgo()
         view.peer_name.text = resource.peer.username
         view.peer_system.text = resource.peer.os + " " + resource.peer.device
+        view.resource_hash.text = resource.file.hash
     }
 
     private fun buildMediaSource(uri: Uri): MediaSource {

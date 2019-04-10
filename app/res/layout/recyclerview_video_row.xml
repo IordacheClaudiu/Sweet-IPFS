@@ -20,6 +20,23 @@
             app:layout_constraintTop_toTopOf="parent"
             app:resize_mode="fill"/>
 
+        <TextView android:id="@+id/resource_hash"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:maxLines="1"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@id/video_view"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent">
+        </TextView>
+
+        <View
+            android:id="@+id/divider_line"
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/dark_gray"
+            app:layout_constraintTop_toBottomOf="@id/resource_hash"/>
+
         <ImageView
             android:id="@+id/peer_image"
             android:layout_width="50dp"
@@ -27,7 +44,7 @@
             android:layout_marginTop="5dp"
             android:src="@drawable/ic_account_circle_black_24dp"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/video_view" />
+            app:layout_constraintTop_toBottomOf="@id/divider_line" />
 
         <TextView
             android:id="@+id/peer_name"
