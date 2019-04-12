@@ -4,7 +4,6 @@ import adapters.resources.ResourcesRecyclerAdapter
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
-import application.ipfs
 import com.google.gson.Gson
 import io.ipfs.multihash.Multihash
 import kotlinx.android.synthetic.main.fragment_feed.*
@@ -15,6 +14,7 @@ import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.info
 import org.jetbrains.anko.uiThread
 import ro.uaic.info.ipfs.R
+import services.ipfs
 import utils.Constants
 import utils.ResourceParser
 

@@ -13,7 +13,9 @@ import io.ipfs.api.NamedStreamable.FileWrapper
 import io.ipfs.multihash.Multihash
 import kotlinx.android.synthetic.main.activity_share.*
 import ro.uaic.info.ipfs.R
+import services.ipfs
 import services.ipfsDaemon
+import utils.ipfsInitialized
 import java.io.File
 import java.io.InputStream
 

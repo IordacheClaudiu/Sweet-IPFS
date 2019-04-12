@@ -22,7 +22,6 @@ import android.text.InputType
 import android.util.SparseArray
 import android.view.ViewGroup
 import android.widget.EditText
-import application.ipfs
 import fragments.FeedFragment
 import fragments.PeersFragment
 import io.ipfs.api.Peer
@@ -30,6 +29,7 @@ import kotlinx.android.synthetic.main.activity_tabbar.*
 import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
+import services.ipfs
 import utils.Constants
 import utils.Constants.INTENT_USER_HASH
 import utils.Constants.IPFS_PUB_SUB_CHANNEL

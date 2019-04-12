@@ -12,11 +12,10 @@ import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.util.Log
 import application.get
-import application.ipfs
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import io.ipfs.api.IPFS
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.debug
 import org.jetbrains.anko.error
@@ -27,6 +26,7 @@ import java.io.FileReader
 
 
 val Context.ipfsDaemon get() = Daemon(this)
+val ipfs by lazy { IPFS("/ip4/127.0.0.1/tcp/5001") }
 
 class Daemon(private val ctx: Context): AnkoLogger {
     private val store by lazy { ctx.getExternalFilesDir(null)["ipfs"] }

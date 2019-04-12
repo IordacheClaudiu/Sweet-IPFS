@@ -3,22 +3,20 @@ package fragments
 import adapters.peers.OnPeerClickListener
 import adapters.peers.PeersRecyclerAdapter
 import android.content.Context
-import android.os.AsyncTask
 import android.os.Bundle
-import android.os.Looper
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import application.ipfs
 import io.ipfs.api.Peer
 import kotlinx.android.synthetic.main.fragment_peers.*
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
+import services.ipfs
 import utils.RVEmptyObserver
 
-class PeersFragment : Fragment() , AnkoLogger, OnPeerClickListener {
+class PeersFragment: Fragment() , AnkoLogger, OnPeerClickListener {
 
     interface PeersFragmentListener {
         fun peersFragmentOnPeerPressed(fragment: PeersFragment, peer: Peer)

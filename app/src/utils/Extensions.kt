@@ -1,5 +1,8 @@
 package utils
 
+import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.location.Location
 import android.util.Base64
 import android.util.Size
@@ -7,6 +10,9 @@ import com.google.android.gms.maps.model.LatLng
 import io.ipfs.multihash.Multihash
 import java.io.File
 import android.graphics.BitmapFactory
+import android.support.v4.app.Fragment
+import android.support.v7.app.AppCompatActivity
+import services.ipfs
 
 // String
 fun String.decode(): String {
@@ -42,4 +48,22 @@ fun File.imageSize(): Size? {
     } else {
         return null
     }
+}
+
+// Fragment
+fun Fragment.clipboard(text: String) = activity!!.clipboard(text)
+
+// Activity
+fun Activity.ipfsInitialized(callback: () -> Unit , error: () -> Unit) = Thread {
+    try {
+        ipfs.version()
+        runOnUiThread(callback)
+    } catch (ex: Exception) {
+        runOnUiThread(error)
+    }
+}.start()
+
+fun Activity.clipboard(text: String) {
+    val clipboard = getSystemService(AppCompatActivity.CLIPBOARD_SERVICE) as ClipboardManager
+    clipboard.primaryClip = ClipData.newPlainText("text" , text)
 }

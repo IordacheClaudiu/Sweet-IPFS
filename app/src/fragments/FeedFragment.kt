@@ -15,8 +15,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.PopupMenu
-import application.clipboard
-import application.ipfs
 import io.ipfs.multiaddr.MultiAddress
 import kotlinx.android.synthetic.main.fragment_feed.*
 import models.IIpfsResource
@@ -25,8 +23,10 @@ import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.info
 import org.jetbrains.anko.uiThread
 import ro.uaic.info.ipfs.R
+import services.ipfs
 import services.ipfsDaemon
 import utils.RVEmptyObserver
+import utils.clipboard
 import java.io.IOException
 
 

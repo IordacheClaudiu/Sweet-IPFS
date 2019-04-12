@@ -14,12 +14,11 @@ import android.view.MenuItem
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import application.chain
 import application.ctx
-import application.ipfsInitialized
 import kotlinx.android.synthetic.main.activity_browse.*
 import ro.uaic.info.ipfs.R
 import services.ipfsDaemon
+import utils.ipfsInitialized
 
 class BrowseActivity : AppCompatActivity() {
 
