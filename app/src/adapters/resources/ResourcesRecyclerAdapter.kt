@@ -94,4 +94,20 @@ class ResourcesRecyclerAdapter(private val ipfs: IPFS , private val resources: M
             diffResult.dispatchUpdatesTo(this)
         }
     }
+
+    fun addAll(newResources: List<IIpfsResource>) {
+        val oldSet = resources.toHashSet()
+        val newSet = newResources.toHashSet()
+        val diffSet = newSet.minus(oldSet)
+        if (!diffSet.isEmpty()) {
+            val oldResources = resources.toList()
+            resources.addAll(diffSet)
+            resources.sortByDescending {
+                it.timestamp.time
+            }
+            val newResources = resources.toList()
+            val diffResult = DiffUtil.calculateDiff(ResourcesDiffUtilCallback(newResources, oldResources))
+            diffResult.dispatchUpdatesTo(this)
+        }
+    }
 }

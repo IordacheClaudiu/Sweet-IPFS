@@ -166,7 +166,7 @@ class Daemon(private val ctx: Context): AnkoLogger {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/54.70.81.198/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf")
+            array.add("/ip4/35.160.115.103/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf")
             array.add("/ip4/54.189.160.162/tcp/4001/ipfs/QmbYQZteYjKLsfEJhg5tnTcTdAKAeutU7ABBsNX3miu5g2")
             array.add("/ip4/54.214.110.255/tcp/4001/ipfs/QmZjm3bQrFgcGJ8o9rzkEEe5pmF7xG3KBc86WprnXXwYgz")
             config.add("Bootstrap" , array)
