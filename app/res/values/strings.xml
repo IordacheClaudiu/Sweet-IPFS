@@ -91,4 +91,6 @@
     <string name="empty_peers_text">No peers connected.</string>
     <string name="feed_new_items_text">New item available.</string>
     <string name="feed_new_items_refresh">Refresh</string>
+    <string name="notification_channel_name">IPFS calamities</string>
+    <string name="notification_channel_description">Channel for receiving IPFS notifications</string>
 </resources>

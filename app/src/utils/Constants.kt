@@ -9,4 +9,6 @@ object Constants {
     const val IPFS_RESOURCE_TYPE_KEY = "type"
 
     const val INTENT_USER_HASH = "intent_user_hash"
+
+    const val CHANNEL_ID = "ro.info.uaic.ipfs"
 }

@@ -1,34 +1,42 @@
 package services
 
 import activities.MainActivity
+import activities.TabsActivity
 import android.R.drawable.ic_menu_close_clear_cancel
 import android.app.*
 import android.app.NotificationManager.IMPORTANCE_MIN
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.os.Binder
 import android.os.Build
+import android.os.Handler
+import android.os.IBinder
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
-import android.util.Log
 import application.get
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
 import io.ipfs.api.IPFS
+import models.IIpfsResource
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.debug
 import org.jetbrains.anko.error
 import org.jetbrains.anko.info
 import ro.uaic.info.ipfs.R
+import utils.Constants.CHANNEL_ID
+import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import utils.IPFSBinaryException
+import utils.ResourceReceiver
 import java.io.FileReader
+import java.util.*
 
 
 val Context.ipfsDaemon get() = Daemon(this)
 val ipfs by lazy { IPFS("/ip4/127.0.0.1/tcp/5001") }
 
-class Daemon(private val ctx: Context): AnkoLogger {
+class Daemon(private val ctx: Context) : AnkoLogger {
     private val store by lazy { ctx.getExternalFilesDir(null)["ipfs"] }
     private val bin by lazy { ctx.filesDir["ipfsbin"] }
     private val version by lazy { ctx.getExternalFilesDir(null)["version"] }
@@ -49,11 +57,11 @@ class Daemon(private val ctx: Context): AnkoLogger {
         return ServiceUtils.isServiceRunning(ctx , DaemonService::class.java)
     }
 
-    fun refresh(onSuccess: () -> Unit, onError:(Exception) -> Unit) {
+    fun refresh(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
         if (! binaryCopied()) {
             install(callback = {
                 info { "Install started." }
-                initIfNeeded(onSuccess, onError)
+                initIfNeeded(onSuccess , onError)
             } , err = {
                 error(it)
                 onError.invoke(IPFSBinaryException(it))
@@ -61,29 +69,29 @@ class Daemon(private val ctx: Context): AnkoLogger {
             })
         } else {
             info { "Install ignored." }
-            initIfNeeded(onSuccess, onError)
+            initIfNeeded(onSuccess , onError)
         }
     }
 
-    private fun initIfNeeded(onSuccess: () -> Unit , onError:(Exception) -> Unit){
+    private fun initIfNeeded(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
         if (! nodeInitialized()) {
             info { "Init started." }
             init(callback = {
                 info { "Init finished." }
-                startIfNeeded(onSuccess, onError)
+                startIfNeeded(onSuccess , onError)
             })
         } else {
             info { "Init ignored." }
-            startIfNeeded(onSuccess, onError)
+            startIfNeeded(onSuccess , onError)
         }
     }
 
-    private fun startIfNeeded(onSuccess: () -> Unit , onError:(Exception) -> Unit) {
-        if (!daemonIsRunning()) {
+    private fun startIfNeeded(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
+        if (! daemonIsRunning()) {
             start({
                 info { "Daemon started." }
                 onSuccess.invoke()
-            }, {
+            } , {
                 onError.invoke(it)
             })
 
@@ -96,12 +104,12 @@ class Daemon(private val ctx: Context): AnkoLogger {
     private fun install(callback: () -> Unit , err: (String) -> Unit = {}) {
         val act = ctx as? Activity ?: return
         info { Build.SUPPORTED_ABIS.joinToString { "," } }
-        val x86Arch  = Build.SUPPORTED_ABIS.indexOfFirst {
+        val x86Arch = Build.SUPPORTED_ABIS.indexOfFirst {
             it.startsWith("x86")
-        } != -1
-        val armArch =  Build.SUPPORTED_ABIS.indexOfFirst {
+        } != - 1
+        val armArch = Build.SUPPORTED_ABIS.indexOfFirst {
             it.startsWith("arm")
-        } != -1
+        } != - 1
 
         val type = when {
             x86Arch -> "x86"
@@ -166,7 +174,7 @@ class Daemon(private val ctx: Context): AnkoLogger {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/35.160.115.103/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf")
+            array.add("/ip4/54.212.29.204/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf")
             array.add("/ip4/54.189.160.162/tcp/4001/ipfs/QmbYQZteYjKLsfEJhg5tnTcTdAKAeutU7ABBsNX3miu5g2")
             array.add("/ip4/54.214.110.255/tcp/4001/ipfs/QmZjm3bQrFgcGJ8o9rzkEEe5pmF7xG3KBc86WprnXXwYgz")
             config.add("Bootstrap" , array)
@@ -205,16 +213,19 @@ class Daemon(private val ctx: Context): AnkoLogger {
     )
 }
 
-class DaemonService : Service() {
+class DaemonService : Service() , AnkoLogger {
 
-    private val LOGTAG = DaemonService::class.java.name
-
-    override fun onBind(i: Intent) = null
+    private val binder = DaemonBinder()
 
     private lateinit var daemon: Process
+    private lateinit var receiver: ResourceReceiver
+    private var showNotification = false
 
-    override fun onCreate() = super.onCreate().also { _ ->
+    inner class DaemonBinder : Binder() {
+        fun getService(): DaemonService = this@DaemonService
+    }
 
+    override fun onCreate() = super.onCreate().also {
         val exit = Intent(this , DaemonService::class.java).apply {
             action = "STOP"
         }.let { PendingIntent.getService(this , 0 , it , 0) }
@@ -242,13 +253,28 @@ class DaemonService : Service() {
         }.also { startForeground(1 , it) }
 
         daemon = ipfsDaemon.run("daemon --enable-pubsub-experiment")
+        Thread {
+            daemon.inputStream.bufferedReader().forEachLine { debug { it } }
+        }.start()
+        Thread {
+            daemon.errorStream.bufferedReader().forEachLine { debug { it } }
+        }.start()
 
-        Thread {
-            daemon.inputStream.bufferedReader().forEachLine { Log.d(LOGTAG , it) }
-        }.start()
-        Thread {
-            daemon.errorStream.bufferedReader().forEachLine { Log.d(LOGTAG , it) }
-        }.start()
+        createNotificationChannel()
+
+        //TODO: move initialization
+        Handler().postDelayed({
+            receiver = ResourceReceiver(ipfs)
+            receiver.subscribeTo(IPFS_PUB_SUB_CHANNEL , {
+                if (showNotification) {
+                    showNotification(it)
+                } else {
+                    info { "callback" }
+                }
+            } , {
+                error { it }
+            })
+        } , 10000)
 
     }
 
@@ -260,5 +286,57 @@ class DaemonService : Service() {
     override fun onStartCommand(i: Intent? , f: Int , id: Int) = START_STICKY.also {
         super.onStartCommand(i , f , id)
         i?.action?.takeIf { it == "STOP" }?.also { stopSelf() }
+    }
+
+    override fun onBind(intent: Intent?): IBinder {
+        info { "onBind" }
+        showNotification = false
+        return binder
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        info { "onUnbind" }
+        showNotification = true
+        return true
+    }
+
+    override fun onRebind(intent: Intent?) = super.onRebind(intent).also {
+        info { "onRebind" }
+        showNotification = false
+    }
+
+    private fun showNotification(resource: IIpfsResource) {
+
+        val intent = Intent(this , TabsActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(this , 0 , intent , 0)
+
+        var builder = NotificationCompat.Builder(this , CHANNEL_ID)
+                .setSmallIcon(R.drawable.notificon)
+                .setContentText(resource.notificationText)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+        with(NotificationManagerCompat.from(this)) {
+            notify(Random().nextInt() , builder.build())
+        }
+
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.notification_channel_name)
+            val descriptionText = getString(R.string.notification_channel_description)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(CHANNEL_ID , name , importance).apply {
+                description = descriptionText
+            }
+            // Register the channel with the system
+            val notificationManager: NotificationManager =
+                    getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 }

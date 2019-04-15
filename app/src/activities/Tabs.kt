@@ -1,8 +1,10 @@
 package activities
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.location.Location
@@ -10,6 +12,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
@@ -29,12 +32,14 @@ import kotlinx.android.synthetic.main.activity_tabbar.*
 import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
+import services.DaemonService
 import services.ipfs
 import utils.Constants
 import utils.Constants.INTENT_USER_HASH
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import utils.ResourceReceiver
 import utils.ResourceSender
+import java.util.concurrent.Future
 
 
 class TabsAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
@@ -107,9 +112,24 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
         val versionRelease = Build.VERSION.RELEASE
         listOf(version , versionRelease).joinToString(" - ")
     }
+
     private var resourceSender: ResourceSender? = null
     private var resourceReceiver: ResourceReceiver? = null
+    private var resourceReceiverSubscription: Future<Unit>? = null
+    private lateinit var mService: DaemonService
+    private var mBound: Boolean = false
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            val binder = service as DaemonService.DaemonBinder
+            mService = binder.getService()
+            mBound = true
+        }
 
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            mBound = false
+        }
+    }
     // Location
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     private val locationProvider = LocationManager.GPS_PROVIDER
@@ -147,10 +167,21 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
         setupCurrentPeer()
     }
 
+    override fun onStart()= super.onStart().also {
+        Intent(this, DaemonService::class.java).also { intent ->
+            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    override fun onStop() = super.onStop().also {
+        unbindService(connection)
+        mBound = false
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        resourceReceiver?.unsubscribeFrom(Constants.IPFS_PUB_SUB_CHANNEL)
         locationManager.removeUpdates(locationListener)
+        resourceReceiverSubscription?.cancel(true)
     }
 
     override fun onActivityResult(req: Int , res: Int , rdata: Intent?) {
@@ -274,8 +305,8 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                     if (lastKnownLocation != null) {
                         resourceSender?.send(Constants.IPFS_PUB_SUB_CHANNEL , lastKnownLocation !! , null , null)
                     }
-                    resourceReceiver = ResourceReceiver(ctx , ipfs)
-                    resourceReceiver?.subscribeTo(Constants.IPFS_PUB_SUB_CHANNEL , { resource ->
+                    resourceReceiver = ResourceReceiver(ipfs)
+                    resourceReceiverSubscription =  resourceReceiver?.subscribeTo(Constants.IPFS_PUB_SUB_CHANNEL , { resource ->
                         val position = viewpager_main.currentItem
                         val fragment = tabsAdapter.registeredFragment(position)
                         if (fragment is FeedFragment) {
