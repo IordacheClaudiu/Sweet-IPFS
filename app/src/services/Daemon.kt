@@ -7,11 +7,13 @@ import android.app.*
 import android.app.NotificationManager.IMPORTANCE_MIN
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
-import android.os.Binder
-import android.os.Build
-import android.os.Handler
-import android.os.IBinder
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.net.Uri
+import android.os.*
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import application.get
@@ -20,15 +22,12 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonParser
 import io.ipfs.api.IPFS
 import models.IIpfsResource
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.debug
-import org.jetbrains.anko.error
-import org.jetbrains.anko.info
+import models.PeerDTO
+import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
+import utils.*
 import utils.Constants.CHANNEL_ID
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
-import utils.IPFSBinaryException
-import utils.ResourceReceiver
 import java.io.FileReader
 import java.util.*
 
@@ -215,15 +214,57 @@ class Daemon(private val ctx: Context) : AnkoLogger {
 
 class DaemonService : Service() , AnkoLogger {
 
+    // Binder
     private val binder = DaemonBinder()
-
-    private lateinit var daemon: Process
-    private lateinit var receiver: ResourceReceiver
-    private var showNotification = false
 
     inner class DaemonBinder : Binder() {
         fun getService(): DaemonService = this@DaemonService
     }
+
+    private var showNotification = false
+
+    // IPFS
+    private lateinit var daemon: java.lang.Process
+    private lateinit var receiver: ResourceReceiver
+    private lateinit var sender: ResourceSender
+    private val username by lazy {
+        defaultSharedPreferences.getString(Constants.SHARED_PREF_USERNAME , null)
+    }
+    private val device by lazy {
+        val manufacturer = Build.MANUFACTURER
+        val model = Build.MODEL
+        listOf(manufacturer , model).joinToString(" ")
+    }
+    private val os by lazy {
+        val version = Build.VERSION.SDK_INT
+        val versionRelease = Build.VERSION.RELEASE
+        listOf(version , versionRelease).joinToString(" - ")
+    }
+
+    // Location
+    private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
+    private var lastKnownLocation: Location? = null
+    private val locationListener = object : LocationListener {
+
+        override fun onLocationChanged(location: Location) {
+            info { location }
+            lastKnownLocation = location
+            send(location)
+        }
+
+        override fun onStatusChanged(provider: String , status: Int , extras: Bundle) {
+            info { "onStatusChanged: $status" }
+        }
+
+        override fun onProviderEnabled(provider: String) {
+            info { "onProviderEnabled: $provider" }
+        }
+
+        override fun onProviderDisabled(provider: String) {
+            info { "onProviderDisabled: $provider" }
+        }
+    }
+
 
     override fun onCreate() = super.onCreate().also {
         val exit = Intent(this , DaemonService::class.java).apply {
@@ -251,7 +292,6 @@ class DaemonService : Service() , AnkoLogger {
             addAction(ic_menu_close_clear_cancel , getString(R.string.stop) , exit)
             build()
         }.also { startForeground(1 , it) }
-
         daemon = ipfsDaemon.run("daemon --enable-pubsub-experiment")
         Thread {
             daemon.inputStream.bufferedReader().forEachLine { debug { it } }
@@ -264,22 +304,37 @@ class DaemonService : Service() , AnkoLogger {
 
         //TODO: move initialization
         Handler().postDelayed({
+            doAsync {
+                val id = ipfs.id()
+                uiThread {
+                    if (id.containsKey("Addresses")) {
+                        val list = id["Addresses"] as List<String>
+                        val peer = PeerDTO(username , device , os , list)
+                        sender = ResourceSender(this@DaemonService , peer , ipfs)
+                    } else {
+                        error { "Peer doesn't have addresses" }
+                    }
+                }
+            }
+
             receiver = ResourceReceiver(ipfs)
             receiver.subscribeTo(IPFS_PUB_SUB_CHANNEL , {
                 if (showNotification) {
                     showNotification(it)
                 } else {
-                    info { "callback" }
+                    EventBus.post(it)
                 }
             } , {
                 error { it }
             })
         } , 10000)
 
+
     }
 
     override fun onDestroy() = super.onDestroy().also {
         daemon.destroy()
+        stopTracking()
         NotificationManagerCompat.from(this).cancel(1)
     }
 
@@ -305,6 +360,32 @@ class DaemonService : Service() , AnkoLogger {
         showNotification = false
     }
 
+    fun startTracking() {
+        try {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER , 2000 , 3f , locationListener)
+        } catch (e: SecurityException) {
+            error { e }
+        }
+    }
+
+    fun send(resource: Any) {
+        when (resource) {
+            is Bitmap -> sender?.send(IPFS_PUB_SUB_CHANNEL , resource , null , null)
+            is String -> sender?.send(IPFS_PUB_SUB_CHANNEL , resource , null , null)
+            is Location -> sender?.send(IPFS_PUB_SUB_CHANNEL , resource , null , null)
+            is Uri -> sender?.send(IPFS_PUB_SUB_CHANNEL , resource , null , null)
+        }
+    }
+
+    private fun stopTracking() {
+        try {
+            locationManager.removeUpdates(locationListener)
+        } catch (ex: Exception) {
+            error { ex }
+        }
+    }
+
+
     private fun showNotification(resource: IIpfsResource) {
 
         val intent = Intent(this , TabsActivity::class.java).apply {
@@ -314,7 +395,9 @@ class DaemonService : Service() , AnkoLogger {
 
         var builder = NotificationCompat.Builder(this , CHANNEL_ID)
                 .setSmallIcon(R.drawable.notificon)
-                .setContentText(resource.notificationText)
+                .setContentTitle(resource.peer.username)
+                .setStyle(NotificationCompat.BigTextStyle()
+                        .bigText(resource.notificationText))
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -339,4 +422,6 @@ class DaemonService : Service() , AnkoLogger {
             notificationManager.createNotificationChannel(channel)
         }
     }
+
+
 }

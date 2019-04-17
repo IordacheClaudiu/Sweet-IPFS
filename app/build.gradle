@@ -56,6 +56,8 @@ dependencies {
     implementation "com.github.clans:fab:1.6.2"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
 
+    implementation 'org.greenrobot:eventbus:3.0.0'
+
     implementation 'com.google.android.exoplayer:exoplayer:2.9.4'
 
     // IPFS - API
