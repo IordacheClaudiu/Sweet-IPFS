@@ -15,7 +15,7 @@ interface IIpfsResource {
     val type: IpfsResourceType
     val peer: PeerDTO
     val timestamp: Date
-    val notificationText: String
+    fun notificationText(): String
 }
 
 data class PeerDTO(val username: String , val device: String , val os: String , val addresses: List<String>) : Serializable {
@@ -43,8 +43,12 @@ data class IpfsTextResource(override val id: UUID ,
                             override val peer: PeerDTO ,
                             override val timestamp: Date ,
                             val text: String) : IIpfsResource {
+
     override val type = IpfsResourceType.TEXT
-    @Transient override val notificationText: String = "You're received a new text."
+
+    override fun notificationText(): String {
+        return "New text posted"
+    }
 
     override fun equals(other: Any?): Boolean {
         if (other !is IpfsTextResource) return false
@@ -61,8 +65,10 @@ data class IpfsLocationResource(override val id: UUID ,
                                 override val timestamp: Date ,
                                 val location: Location) : IIpfsResource {
     override val type = IpfsResourceType.LOCATION
-    @Transient override val notificationText: String = "You're received a new location."
 
+    override fun notificationText(): String {
+        return "New location posted."
+    }
     override fun equals(other: Any?): Boolean {
         if (other !is IpfsLocationResource) return false
         return this.id == other.id &&
@@ -79,7 +85,10 @@ data class IpfsImageResource(override val id: UUID ,
                              val file: FileDTO,
                              val size: Size?) : IIpfsResource {
     override val type = IpfsResourceType.IMAGE
-    @Transient override val notificationText: String = "You're received a new image."
+
+    override fun notificationText(): String {
+       return "New image posted."
+    }
 
     override fun equals(other: Any?): Boolean {
         if (other !is IpfsImageResource) return false
@@ -95,7 +104,10 @@ data class IpfsVideoResource(override val id: UUID ,
                              override val timestamp: Date ,
                              val file: FileDTO) : IIpfsResource {
     override val type = IpfsResourceType.VIDEO
-    @Transient override val notificationText: String = "You're received a new video."
+
+    override fun notificationText(): String {
+        return "New video posted."
+    }
 
     override fun equals(other: Any?): Boolean {
         if (other !is IpfsVideoResource) return false

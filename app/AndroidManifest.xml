@@ -22,7 +22,7 @@
             android:value="AIzaSyAqLaZ37-19e8UV4n6BkKZyGTkXUnyvv2Y" />
 
         <service
-            android:name="services.DaemonService"
+            android:name="services.ForegroundService"
             android:exported="false"
             android:stopWithTask="false" />
 

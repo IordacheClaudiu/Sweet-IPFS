@@ -5,15 +5,20 @@ import activities.TabsActivity
 import android.R.drawable.ic_menu_close_clear_cancel
 import android.app.*
 import android.app.NotificationManager.IMPORTANCE_MIN
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.net.Uri
-import android.os.*
+import android.os.Binder
+import android.os.Build
+import android.os.Bundle
+import android.os.IBinder
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import application.get
@@ -21,6 +26,8 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonParser
 import io.ipfs.api.IPFS
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.ReplaySubject
 import models.IIpfsResource
 import models.PeerDTO
 import org.jetbrains.anko.*
@@ -30,6 +37,7 @@ import utils.Constants.CHANNEL_ID
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
 import java.io.FileReader
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 val Context.ipfsDaemon get() = Daemon(this)
@@ -44,6 +52,25 @@ class Daemon(private val ctx: Context) : AnkoLogger {
 
     val config by lazy { JsonParser().parse(FileReader(store["config"])).asJsonObject }
 
+    private var onSuccess: (() -> Unit)? = null
+    private var onError: ((Throwable) -> Unit)? = null
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName , service: IBinder) {
+            val binder = service as ForegroundService.ForegroundBinder
+            val mService = binder.getService()
+            mService.setupFinished.subscribe({
+                when(it) {
+                    true -> onSuccess?.invoke()
+                }
+            },{
+                onError?.invoke(it)
+            })
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+        }
+    }
+
     fun binaryCopied(): Boolean {
         return bin.exists()
     }
@@ -53,10 +80,10 @@ class Daemon(private val ctx: Context) : AnkoLogger {
     }
 
     fun daemonIsRunning(): Boolean {
-        return ServiceUtils.isServiceRunning(ctx , DaemonService::class.java)
+        return ServiceUtils.isServiceRunning(ctx , ForegroundService::class.java)
     }
 
-    fun refresh(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
+    fun refresh(onSuccess: () -> Unit , onError: (Throwable) -> Unit) {
         if (! binaryCopied()) {
             install(callback = {
                 info { "Install started." }
@@ -72,7 +99,7 @@ class Daemon(private val ctx: Context) : AnkoLogger {
         }
     }
 
-    private fun initIfNeeded(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
+    private fun initIfNeeded(onSuccess: () -> Unit , onError: (Throwable) -> Unit) {
         if (! nodeInitialized()) {
             info { "Init started." }
             init(callback = {
@@ -85,7 +112,7 @@ class Daemon(private val ctx: Context) : AnkoLogger {
         }
     }
 
-    private fun startIfNeeded(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
+    private fun startIfNeeded(onSuccess: () -> Unit , onError: (Throwable) -> Unit) {
         if (! daemonIsRunning()) {
             start({
                 info { "Daemon started." }
@@ -189,21 +216,15 @@ class Daemon(private val ctx: Context) : AnkoLogger {
 
     }
 
-    private fun start(onSuccess: () -> Unit , onError: (Exception) -> Unit) {
+    private fun start(onSuccess: () -> Unit , onError: (Throwable) -> Unit) {
+        this.onSuccess = onSuccess
+        this.onError = onError
         val act = ctx as? Activity ?: return
-        act.startService(Intent(act , DaemonService::class.java))
-        Thread {
-            while (true.also { Thread.sleep(1000) }) try {
-                version.writeText(
-                        ipfs.version() ?: continue
-                ); break
-            } catch (ex: Exception) {
-                error { ex }
-            }
-            act.runOnUiThread {
-                onSuccess.invoke()
-            }
-        }.start()
+        Intent(act , ForegroundService::class.java).also { intent ->
+            act.startService(intent)
+            act.bindService(intent , connection , Context.BIND_AUTO_CREATE)
+        }
+
     }
 
     fun run(cmd: String) = Runtime.getRuntime().exec(
@@ -212,13 +233,13 @@ class Daemon(private val ctx: Context) : AnkoLogger {
     )
 }
 
-class DaemonService : Service() , AnkoLogger {
+class ForegroundService : Service() , AnkoLogger {
 
     // Binder
-    private val binder = DaemonBinder()
+    private val binder = ForegroundBinder()
 
-    inner class DaemonBinder : Binder() {
-        fun getService(): DaemonService = this@DaemonService
+    inner class ForegroundBinder : Binder() {
+        fun getService(): ForegroundService = this@ForegroundService
     }
 
     private var showNotification = false
@@ -227,6 +248,11 @@ class DaemonService : Service() , AnkoLogger {
     private lateinit var daemon: java.lang.Process
     private lateinit var receiver: ResourceReceiver
     private lateinit var sender: ResourceSender
+    private lateinit var peer: PeerDTO
+    val setupFinished = PublishSubject.create<Boolean>()
+    val resourcesObservable = ReplaySubject.create<List<IIpfsResource>>()
+    val loadingPeersObservable= ReplaySubject.create<Boolean>(1)
+
     private val username by lazy {
         defaultSharedPreferences.getString(Constants.SHARED_PREF_USERNAME , null)
     }
@@ -265,71 +291,10 @@ class DaemonService : Service() , AnkoLogger {
         }
     }
 
-
     override fun onCreate() = super.onCreate().also {
-        val exit = Intent(this , DaemonService::class.java).apply {
-            action = "STOP"
-        }.let { PendingIntent.getService(this , 0 , it , 0) }
-
-        val open = Intent(this , MainActivity::class.java)
-                .let { PendingIntent.getActivity(this , 0 , it , 0) }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            NotificationChannel("sweetipfs" , "Sweet IPFS" , IMPORTANCE_MIN).apply {
-                description = "Sweet IPFS"
-                getSystemService(NotificationManager::class.java)
-                        .createNotificationChannel(this)
-            }
-
-        NotificationCompat.Builder(this , "sweetipfs").run {
-            setOngoing(true)
-            color = Color.parseColor("#4b9fa2")
-            setSmallIcon(R.drawable.notificon)
-            setShowWhen(false)
-            setContentTitle(getString(R.string.notif_title))
-            setContentText(getString(R.string.notif_msg))
-            setContentIntent(open)
-            addAction(ic_menu_close_clear_cancel , getString(R.string.stop) , exit)
-            build()
-        }.also { startForeground(1 , it) }
-        daemon = ipfsDaemon.run("daemon --enable-pubsub-experiment")
-        Thread {
-            daemon.inputStream.bufferedReader().forEachLine { debug { it } }
-        }.start()
-        Thread {
-            daemon.errorStream.bufferedReader().forEachLine { debug { it } }
-        }.start()
-
-        createNotificationChannel()
-
-        //TODO: move initialization
-        Handler().postDelayed({
-            doAsync {
-                val id = ipfs.id()
-                uiThread {
-                    if (id.containsKey("Addresses")) {
-                        val list = id["Addresses"] as List<String>
-                        val peer = PeerDTO(username , device , os , list)
-                        sender = ResourceSender(this@DaemonService , peer , ipfs)
-                    } else {
-                        error { "Peer doesn't have addresses" }
-                    }
-                }
-            }
-
-            receiver = ResourceReceiver(ipfs)
-            receiver.subscribeTo(IPFS_PUB_SUB_CHANNEL , {
-                if (showNotification) {
-                    showNotification(it)
-                } else {
-                    EventBus.post(it)
-                }
-            } , {
-                error { it }
-            })
-        } , 10000)
-
-
+        setupForegroundNotification()
+        setupNotificationChannel()
+        setupIPFSClient()
     }
 
     override fun onDestroy() = super.onDestroy().also {
@@ -385,19 +350,16 @@ class DaemonService : Service() , AnkoLogger {
         }
     }
 
-
     private fun showNotification(resource: IIpfsResource) {
-
         val intent = Intent(this , TabsActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent: PendingIntent = PendingIntent.getActivity(this , 0 , intent , 0)
 
         var builder = NotificationCompat.Builder(this , CHANNEL_ID)
-                .setSmallIcon(R.drawable.notificon)
+                .setSmallIcon(ro.uaic.info.ipfs.R.drawable.notificon)
                 .setContentTitle(resource.peer.username)
-                .setStyle(NotificationCompat.BigTextStyle()
-                        .bigText(resource.notificationText))
+                .setContentText(resource.notificationText())
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -405,10 +367,9 @@ class DaemonService : Service() , AnkoLogger {
         with(NotificationManagerCompat.from(this)) {
             notify(Random().nextInt() , builder.build())
         }
-
     }
 
-    private fun createNotificationChannel() {
+    private fun setupNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.notification_channel_name)
             val descriptionText = getString(R.string.notification_channel_description)
@@ -423,5 +384,97 @@ class DaemonService : Service() , AnkoLogger {
         }
     }
 
+    private fun setupIPFSClient() {
+        doAsync {
+            while (true.also { Thread.sleep(1000) }) try {
+                ipfs.id()
+                break
+            } catch (ex: Exception) {
+                error { ex }
+            }
+            val id = ipfs.id()
+            uiThread {
+                if (id.containsKey("Addresses")) {
+                    val list = id["Addresses"] as List<String>
+                    peer = PeerDTO(username , device , os , list)
+                    sender = ResourceSender(this@ForegroundService , peer , ipfs)
+                } else {
+                    setupFinished.onError(IPFSInvalidNode())
+                    error { "Peer doesn't have addresses" }
+                }
+                receiver = ResourceReceiver(ipfs)
+                receiver.subscribeTo(IPFS_PUB_SUB_CHANNEL , { it ->
+                    if (showNotification && it.peer != peer) {
+                        showNotification(it)
+                    } else {
+                        resourcesObservable.onNext(listOf(it))
+                    }
+                } , {
+                    error { it }
+                })
+                setupFinished.onNext(true)
+                fetchLocalResources()
+            }
+        }
+    }
+
+    private fun fetchLocalResources() {
+        val parser = ResourceParser()
+        loadingPeersObservable.onNext(true)
+        doAsync {
+                val localHashes = ipfs.refs.local()
+                var resources: MutableList<IIpfsResource> = ArrayList()
+                localHashes.forEach {
+                    try {
+                        val bytes = ipfs.cat(it)
+                        val json = String(bytes)
+                        val resource = parser.parseResource(json)
+                        resource?.let { resources.add(resource) }
+                        debug { json }
+                    } catch (ex: Throwable) {
+                        error { ex }
+                    }
+                }
+                uiThread {
+                    resourcesObservable.onNext(resources)
+                    loadingPeersObservable.onNext(false)
+                }
+            }
+    }
+
+    private fun setupForegroundNotification() {
+        val exit = Intent(this , ForegroundService::class.java).apply {
+            action = "STOP"
+        }.let { PendingIntent.getService(this , 0 , it , 0) }
+
+        val open = Intent(this , MainActivity::class.java)
+                .let { PendingIntent.getActivity(this , 0 , it , 0) }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            NotificationChannel("sweetipfs" , "Sweet IPFS" , IMPORTANCE_MIN).apply {
+                description = "Sweet IPFS"
+                getSystemService(NotificationManager::class.java)
+                        .createNotificationChannel(this)
+            }
+
+        NotificationCompat.Builder(this , "sweetipfs").run {
+            setOngoing(true)
+            color = Color.parseColor("#4b9fa2")
+            setSmallIcon(R.drawable.notificon)
+            setShowWhen(false)
+            setContentTitle(getString(R.string.notif_title))
+            setContentText(getString(R.string.notif_msg))
+            setContentIntent(open)
+            addAction(ic_menu_close_clear_cancel , getString(R.string.stop) , exit)
+            build()
+        }.also { startForeground(1 , it) }
+        daemon = ipfsDaemon.run("daemon --enable-pubsub-experiment")
+        Thread {
+            daemon.inputStream.bufferedReader().forEachLine { debug { it } }
+        }.start()
+        Thread {
+            daemon.errorStream.bufferedReader().forEachLine { debug { it } }
+        }.start()
+    }
 
 }

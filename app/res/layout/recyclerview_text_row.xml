@@ -40,7 +40,7 @@
 
         <TextView
             android:id="@+id/peer_system"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:maxLines="2"
             app:layout_constraintStart_toEndOf="@+id/peer_image"

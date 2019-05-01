@@ -7,7 +7,6 @@ import io.ipfs.api.IPFS
 import io.ipfs.api.Peer
 import io.ipfs.multihash.Multihash
 import kotlinx.android.synthetic.main.recyclerview_peer_row.view.*
-import models.PeerDTO
 import models.RepositoryDTO
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.doAsync

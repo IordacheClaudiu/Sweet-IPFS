@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import io.ipfs.api.IPFS
 import io.ipfs.api.Peer
-import models.PeerDTO
 import ro.uaic.info.ipfs.R
 
 interface OnPeerClickListener {

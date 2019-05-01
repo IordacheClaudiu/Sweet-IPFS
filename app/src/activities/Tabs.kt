@@ -16,6 +16,7 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.text.InputType
 import android.util.SparseArray
+import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import com.tbruyelle.rxpermissions2.RxPermissions
@@ -23,15 +24,12 @@ import fragments.FeedFragment
 import fragments.PeersFragment
 import io.ipfs.api.Peer
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_tabbar.*
-import models.IIpfsResource
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
 import ro.uaic.info.ipfs.R
-import services.DaemonService
+import services.ForegroundService
 import utils.Constants.INTENT_USER_HASH
-import utils.EventBus
 
 
 class TabsAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm) {
@@ -89,15 +87,36 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
     private val READ_DOCUMENT_REQUEST_CODE = 101
     private val IMAGE_CAPTURE_REQUEST_CODE = 102
 
-    private var disposable: Disposable? = null
-
-    private var mService: DaemonService? = null
+    private var mService: ForegroundService? = null
     private var mBound: Boolean = false
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName , service: IBinder) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
-            val binder = service as DaemonService.DaemonBinder
+            // We've bound to LocalService, cast the IBinder and get ForegroundService instance
+            val binder = service as ForegroundService.ForegroundBinder
             mService = binder.getService()
+            mService?.let {
+                it.loadingPeersObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
+                    when (it) {
+                        true -> {
+                            progressBar.visibility = View.VISIBLE
+                            progressTextView.visibility = View.VISIBLE
+                        }
+                        false -> {
+                            progressBar.visibility = View.GONE
+                            progressTextView.visibility = View.GONE
+                        }
+                    }
+                }
+
+                it.resourcesObservable?.observeOn(AndroidSchedulers.mainThread()).subscribe {
+                    val position = viewpager_main.currentItem
+                    val fragment = tabsAdapter.registeredFragment(position)
+                    if (fragment is FeedFragment) {
+                        fragment.add(it)
+                    }
+                }
+            }
+
             mBound = true
             setupLocationManager()
         }
@@ -116,27 +135,8 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
         tabs_main.setupWithViewPager(viewpager_main)
     }
 
-    override fun onResume() = super.onResume().also {
-        disposable =
-                EventBus.subscribe<IIpfsResource>()
-                        // if you want to receive the event on main thread
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe {
-                            val position = viewpager_main.currentItem
-                            val fragment = tabsAdapter.registeredFragment(position)
-                            if (fragment is FeedFragment) {
-                                fragment.add(it)
-                            }
-                        }
-
-    }
-
-    override fun onPause() = super.onPause().also {
-        disposable?.dispose()
-    }
-
     override fun onStart() = super.onStart().also {
-        Intent(this , DaemonService::class.java).also { intent ->
+        Intent(this , ForegroundService::class.java).also { intent ->
             bindService(intent , connection , Context.BIND_AUTO_CREATE)
         }
 
@@ -146,7 +146,6 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
         unbindService(connection)
         mBound = false
     }
-
 
     override fun onActivityResult(req: Int , res: Int , rdata: Intent?) {
         super.onActivityResult(req , res , rdata)
@@ -199,7 +198,7 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                 setView(this)
             }
             setPositiveButton(getString(R.string.apply)) { _ , _ ->
-                mService?.send(txt.text.toString() )
+                mService?.send(txt.text.toString())
             }
             setNegativeButton(getString(R.string.cancel)) { _ , _ -> }
         }.show()
@@ -227,4 +226,5 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                     }
                 }.dispose()
     }
+
 }

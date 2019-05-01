@@ -16,6 +16,7 @@ import org.jetbrains.anko.uiThread
 import ro.uaic.info.ipfs.R
 import services.ipfs
 import utils.Constants
+import utils.RVEmptyObserver
 import utils.ResourceParser
 
 class ResourcesActivity: AppCompatActivity(), AnkoLogger {
@@ -43,7 +44,7 @@ class ResourcesActivity: AppCompatActivity(), AnkoLogger {
         val resources: MutableList<IIpfsResource> = mutableListOf()
         adapter = ResourcesRecyclerAdapter(ipfs , resources)
         recyclerView.adapter = adapter
-//        adapter.registerAdapterDataObserver(RVEmptyObserver(recyclerView, emptyView))
+        adapter.registerAdapterDataObserver(RVEmptyObserver(recyclerView, emptyView))
     }
 
     private fun refreshPeerContent() {

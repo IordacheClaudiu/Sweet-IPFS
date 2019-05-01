@@ -76,14 +76,23 @@ class FeedFragment : Fragment() , AnkoLogger {
         setupFloatingBtns()
     }
 
+    fun add(resources: List<IIpfsResource>) {
+        adapter.addAll(resources)
+        updateLayoutManager()
+    }
+
     fun add(resource: IIpfsResource) {
         adapter.add(resource)
+        updateLayoutManager()
+    }
+
+    private fun updateLayoutManager() {
         val layoutManager = recyclerView.layoutManager as LinearLayoutManager
         val visiblePosition = layoutManager.findFirstVisibleItemPosition()
         if (visiblePosition > 0) {
             snackBar.setAction(R.string.feed_new_items_refresh) {
                 snackBar.dismiss()
-                layoutManager.smoothScrollToPosition(recyclerView, RecyclerView.State(), 0)
+                layoutManager.smoothScrollToPosition(recyclerView , RecyclerView.State() , 0)
             }
             snackBar.show()
         }
