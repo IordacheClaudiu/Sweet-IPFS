@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    app:cardElevation="3dp"
+    app:contentPadding="4dp">
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/image_view"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:layout_weight="1"
+            android:scaleType="centerInside"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <TextView android:id="@+id/resource_hash"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:textSize="12sp"
+            app:layout_constraintTop_toBottomOf="@id/image_view"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent">
+        </TextView>
+
+        <View
+            android:id="@+id/divider_line"
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/dark_gray"
+            app:layout_constraintTop_toBottomOf="@id/resource_hash"/>
+
+        <ImageView
+            android:id="@+id/peer_image"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="5dp"
+            android:src="@drawable/ic_account_circle_black_24dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider_line" />
+
+        <TextView
+            android:id="@+id/peer_name"
+            android:layout_width="0dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@+id/peer_image"
+            android:textSize="25sp"
+            app:layout_constraintLeft_toRightOf="@id/peer_image"
+            app:layout_constraintRight_toLeftOf="@id/timestamp"
+            app:layout_constraintTop_toTopOf="@id/peer_image" />
+
+        <TextView
+            android:id="@+id/timestamp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="5dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/peer_name" />
+
+        <TextView
+            android:id="@+id/peer_system"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/peer_image"
+            app:layout_constraintTop_toBottomOf="@id/peer_name" />
+
+    </android.support.constraint.ConstraintLayout>
+</android.support.v7.widget.CardView>
