@@ -1,6 +1,11 @@
+plugins {
+    id "de.undercouch.download" version "3.4.3"
+}
+
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply from: 'binaries.gradle'
 
 android {
     compileSdkVersion 27

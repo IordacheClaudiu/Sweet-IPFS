@@ -130,17 +130,13 @@ class Daemon(private val ctx: Context) : AnkoLogger {
     private fun install(callback: () -> Unit , err: (String) -> Unit = {}) {
         val act = ctx as? Activity ?: return
         info { Build.SUPPORTED_ABIS.joinToString { "," } }
-        val x86Arch = Build.SUPPORTED_ABIS.indexOfFirst {
-            it.startsWith("x86")
-        } != - 1
-        val armArch = Build.SUPPORTED_ABIS.indexOfFirst {
-            it.startsWith("arm")
-        } != - 1
 
-        val type = when {
-            x86Arch -> "x86"
-            armArch -> "arm"
-            else -> return err("${ctx.getString(R.string.daemon_unsupported_arch)}: ${Build.SUPPORTED_ABIS}")
+        val type = when(val abi = Build.SUPPORTED_ABIS[0]) {
+            "arm64-v8a" -> "arm64"
+            "x86_64" -> "amd64"
+            "armeabi", "armeabi-v7a" -> "arm"
+            "x86", "386" -> "386"
+            else -> throw Exception("${ctx.getString(R.string.daemon_unsupported_arch)}: $abi")
         }
 
         // install ipfs
