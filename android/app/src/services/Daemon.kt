@@ -353,7 +353,7 @@ class ForegroundService : Service() , AnkoLogger {
         val pendingIntent: PendingIntent = PendingIntent.getActivity(this , 0 , intent , 0)
 
         var builder = NotificationCompat.Builder(this , CHANNEL_ID)
-                .setSmallIcon(ro.uaic.info.ipfs.R.drawable.notificon)
+                .setSmallIcon(R.drawable.notificon)
                 .setContentTitle(resource.peer.username)
                 .setContentText(resource.notificationText())
                 .setContentIntent(pendingIntent)
