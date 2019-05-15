@@ -25,6 +25,7 @@ class PeerHolder(v: View , private val ipfs: IPFS): RecyclerView.ViewHolder(v) ,
     lateinit var listener: OnPeerClickListener
     private var asyncUnit: Future<Unit>? = null
     private var nrOfFiles: Int? = null
+    private var username: String? = null
 
     init {
         v.setOnClickListener(this)
@@ -56,6 +57,7 @@ class PeerHolder(v: View , private val ipfs: IPFS): RecyclerView.ViewHolder(v) ,
                 if (repositoryDTO.multiHashes.isNotEmpty()) {
                     uiThread {
                         nrOfFiles = repositoryDTO.multiHashes.size
+                        username = repositoryDTO.peer.username
                         updateUI(State.DATA)
                     }
                 } else {
@@ -85,6 +87,7 @@ class PeerHolder(v: View , private val ipfs: IPFS): RecyclerView.ViewHolder(v) ,
             }
             State.DATA -> {
                 view.peer_file_counter.text = "${nrOfFiles!!} files hosted"
+                view.peer_name.text = "${username!!}"
             }
         }
     }

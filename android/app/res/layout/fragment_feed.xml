@@ -7,28 +7,6 @@
     android:layout_height="match_parent"
     tools:context="fragments.FeedFragment">
 
-    <Button
-        android:id="@+id/actionbtn"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@android:color/background_light"
-        android:text="@string/menu_action"
-        app:layout_constraintEnd_toStartOf="@+id/configbtn"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-
-    <Button
-        android:id="@+id/configbtn"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@android:color/background_light"
-        android:text="@string/menu_config"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/actionbtn"
-        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/emptyView"
@@ -52,7 +30,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/actionbtn" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/floatingBtnMenu"

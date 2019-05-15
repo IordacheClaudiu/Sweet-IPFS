@@ -196,9 +196,9 @@ class Daemon(private val ctx: Context) : AnkoLogger {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/54.212.29.204/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf")
-            array.add("/ip4/54.189.160.162/tcp/4001/ipfs/QmbYQZteYjKLsfEJhg5tnTcTdAKAeutU7ABBsNX3miu5g2")
-            array.add("/ip4/54.214.110.255/tcp/4001/ipfs/QmZjm3bQrFgcGJ8o9rzkEEe5pmF7xG3KBc86WprnXXwYgz")
+            array.add("/ip4/34.218.255.141/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf") //USER1
+            array.add("/ip4/54.200.38.197/tcp/4001/ipfs/QmVYxFLEwR8soew4MTC3otyDo1aoh9hoLLXX8TH4ghZLjn") //USER2
+            array.add("/ip4/34.215.50.255/tcp/4001/ipfs/QmcjS2BMHffgsZkAj4RJPSJ3pVxsGsJaWhwnKXGitueMRM") //USER3
             config.add("Bootstrap" , array)
 
             GsonBuilder()
@@ -265,13 +265,19 @@ class ForegroundService : Service() , AnkoLogger {
 
     // Location
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
+    private val locationProvider: String = LocationManager.GPS_PROVIDER
+    private var locationManagerStarted =  false
     private var lastKnownLocation: Location? = null
+    private val TWO_MINUTES: Long = 1000 * 60 * 2
+
     private val locationListener = object : LocationListener {
 
         override fun onLocationChanged(location: Location) {
             info { location }
-            lastKnownLocation = location
-            send(location)
+            if (isBetterLocation(location, lastKnownLocation)) {
+                lastKnownLocation = location
+                send(location)
+            }
         }
 
         override fun onStatusChanged(provider: String , status: Int , extras: Bundle) {
@@ -322,10 +328,22 @@ class ForegroundService : Service() , AnkoLogger {
     }
 
     fun startTracking() {
+        if (locationManagerStarted) { return }
         try {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER , 2000 , 3f , locationListener)
+            locationManager.requestLocationUpdates(locationProvider, 2000 , 3f , locationListener)
+            locationManagerStarted = true
+            lastKnownLocation = locationManager.getLastKnownLocation(locationProvider)
         } catch (e: SecurityException) {
             error { e }
+        }
+    }
+
+    private fun stopTracking() {
+        try {
+            locationManager.removeUpdates(locationListener)
+            locationManagerStarted = false
+        } catch (ex: Exception) {
+            error { ex }
         }
     }
 
@@ -335,14 +353,6 @@ class ForegroundService : Service() , AnkoLogger {
             is String -> sender?.send(IPFS_PUB_SUB_CHANNEL , resource , null , null)
             is Location -> sender?.send(IPFS_PUB_SUB_CHANNEL , resource , null , null)
             is Uri -> sender?.send(IPFS_PUB_SUB_CHANNEL , resource , null , null)
-        }
-    }
-
-    private fun stopTracking() {
-        try {
-            locationManager.removeUpdates(locationListener)
-        } catch (ex: Exception) {
-            error { ex }
         }
     }
 
@@ -399,11 +409,12 @@ class ForegroundService : Service() , AnkoLogger {
                     error { "Peer doesn't have addresses" }
                 }
                 receiver = ResourceReceiver(ipfs)
-                receiver.subscribeTo(IPFS_PUB_SUB_CHANNEL , { it ->
-                    if (showNotification && it.peer != peer) {
-                        showNotification(it)
-                    } else {
+                receiver.subscribeTo(IPFS_PUB_SUB_CHANNEL , {
+                    if (it.peer != peer) {
                         resourcesObservable.onNext(listOf(it))
+                    }
+                    if (showNotification) {
+                        showNotification(it)
                     }
                 } , {
                     error { it }
@@ -473,4 +484,41 @@ class ForegroundService : Service() , AnkoLogger {
         }.start()
     }
 
+    private fun isBetterLocation(location: Location, currentBestLocation: Location?): Boolean {
+        if (currentBestLocation == null) {
+            // A new location is always better than no location
+            return true
+        }
+
+        // Check whether the new location fix is newer or older
+        val timeDelta: Long = location.time - currentBestLocation.time
+        val isSignificantlyNewer: Boolean = timeDelta > TWO_MINUTES
+        val isSignificantlyOlder:Boolean = timeDelta < -TWO_MINUTES
+
+        when {
+            // If it's been more than two minutes since the current location, use the new location
+            // because the user has likely moved
+            isSignificantlyNewer -> return true
+            // If the new location is more than two minutes older, it must be worse
+            isSignificantlyOlder -> return false
+        }
+
+        // Check whether the new location fix is more or less accurate
+        val isNewer: Boolean = timeDelta > 0L
+        val accuracyDelta: Float = location.accuracy - currentBestLocation.accuracy
+        val isLessAccurate: Boolean = accuracyDelta > 0f
+        val isMoreAccurate: Boolean = accuracyDelta < 0f
+        val isSignificantlyLessAccurate: Boolean = accuracyDelta > 200f
+
+        // Check if the old and new location are from the same provider
+        val isFromSameProvider: Boolean = location.provider == currentBestLocation.provider
+
+        // Determine location quality using a combination of timeliness and accuracy
+        return when {
+            isMoreAccurate -> true
+            isNewer && !isLessAccurate -> true
+            isNewer && !isSignificantlyLessAccurate && isFromSameProvider -> true
+            else -> false
+        }
+    }
 }

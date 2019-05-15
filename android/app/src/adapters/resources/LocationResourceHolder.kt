@@ -33,7 +33,7 @@ class LocationResourceHolder(v: View) : ResourceHolder<IpfsLocationResource>(v) 
         this.googleMap = googleMap
         this.googleMap.notNull {
             MapsInitializer.initialize(view.context)
-            it.uiSettings?.isMapToolbarEnabled = false
+//            it.uiSettings?.isMapToolbarEnabled = false
             resource.location.notNull { googleMap.notNull { updateMapContents(it) } }
         }
     }
@@ -61,7 +61,7 @@ class LocationResourceHolder(v: View) : ResourceHolder<IpfsLocationResource>(v) 
     private fun updateMapContents(googleMap: GoogleMap) {
         googleMap.clear()
         googleMap.addMarker(MarkerOptions().position(resource.location.latLng()))
-        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(resource.location.latLng() , 20f)
+        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(resource.location.latLng() , 15f)
         googleMap.moveCamera(cameraUpdate)
         googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
     }
