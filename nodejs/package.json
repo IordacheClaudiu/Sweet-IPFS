@@ -1,0 +1,24 @@
+{
+  "name": "note_app",
+  "version": "1.0.0",
+  "description": "Ceva",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "test",
+    "dummy"
+  ],
+  "author": "dummy idiot",
+  "license": "ISC",
+  "dependencies": {
+    "atob": "^2.1.2",
+    "aws-sdk": "^2.460.0",
+    "bl": "^3.0.0",
+    "fs": "0.0.1-security",
+    "ipfs-http-client": "^32.0.1",
+    "node-forge": "^0.8.4",
+    "node-rsa": "^1.0.5"
+  }
+}
