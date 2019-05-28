@@ -35,6 +35,7 @@ import ro.uaic.info.ipfs.R
 import utils.*
 import utils.Constants.CHANNEL_ID
 import utils.Constants.IPFS_PUB_SUB_CHANNEL
+import utils.crypto.Crypto
 import java.io.FileReader
 import java.util.*
 import kotlin.collections.ArrayList
@@ -49,7 +50,6 @@ class Daemon(private val ctx: Context) : AnkoLogger {
     private val version by lazy { ctx.getExternalFilesDir(null)["version"] }
     private val swarmFile by lazy { store[swarmKey] }
     private val swarmKey by lazy { "swarm.key" }
-
     val config by lazy { JsonParser().parse(FileReader(store["config"])).asJsonObject }
 
     private var onSuccess: (() -> Unit)? = null
@@ -196,9 +196,10 @@ class Daemon(private val ctx: Context) : AnkoLogger {
 
             config.remove("Bootstrap")
             val array = JsonArray(3)
-            array.add("/ip4/34.218.255.141/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf") //USER1
+            array.add("/ip4/52.27.109.224/tcp/4001/ipfs/Qmdx6y1fSaSwoNiqsdvh72SiUaLEhkQ5UAPhwB4r64pbRf") //USER1
             array.add("/ip4/54.200.38.197/tcp/4001/ipfs/QmVYxFLEwR8soew4MTC3otyDo1aoh9hoLLXX8TH4ghZLjn") //USER2
             array.add("/ip4/34.215.50.255/tcp/4001/ipfs/QmcjS2BMHffgsZkAj4RJPSJ3pVxsGsJaWhwnKXGitueMRM") //USER3
+            array.add("/ip4/192.168.1.5/tcp/4001/ipfs/QmeJPrqBr4SFw7Wh63YnZN1m7yu29C6KeRkyoVJbpVjxMC") //Local MacBook
             config.add("Bootstrap" , array)
 
             GsonBuilder()
@@ -292,6 +293,9 @@ class ForegroundService : Service() , AnkoLogger {
             info { "onProviderDisabled: $provider" }
         }
     }
+
+    // Asymetric crypto
+    private val crypto by lazy {Crypto("IPFS_KEYS") }
 
     override fun onCreate() = super.onCreate().also {
         setupForegroundNotification()
@@ -402,7 +406,7 @@ class ForegroundService : Service() , AnkoLogger {
             uiThread {
                 if (id.containsKey("Addresses")) {
                     val list = id["Addresses"] as List<String>
-                    peer = PeerDTO(username , device , os , list)
+                    peer = PeerDTO(username , device , os , list, crypto.publicKey)
                     sender = ResourceSender(this@ForegroundService , peer , ipfs)
                 } else {
                     setupFinished.onError(IPFSInvalidNode())

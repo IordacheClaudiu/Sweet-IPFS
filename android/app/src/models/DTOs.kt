@@ -18,7 +18,11 @@ interface IIpfsResource {
     fun notificationText(): String
 }
 
-data class PeerDTO(val username: String , val device: String , val os: String , val addresses: List<String>) : Serializable {
+data class PeerDTO(val username: String ,
+                   val device: String ,
+                   val os: String ,
+                   val addresses: List<String>,
+                   val publicKey: String?) : Serializable {
 
     override fun equals(other: Any?): Boolean {
         if (other !is PeerDTO) return false
@@ -69,6 +73,7 @@ data class IpfsLocationResource(override val id: UUID ,
     override fun notificationText(): String {
         return "New location posted."
     }
+
     override fun equals(other: Any?): Boolean {
         if (other !is IpfsLocationResource) return false
         return this.id == other.id &&
@@ -82,12 +87,12 @@ data class IpfsLocationResource(override val id: UUID ,
 data class IpfsImageResource(override val id: UUID ,
                              override val peer: PeerDTO ,
                              override val timestamp: Date ,
-                             val file: FileDTO,
+                             val file: FileDTO ,
                              val size: Size?) : IIpfsResource {
     override val type = IpfsResourceType.IMAGE
 
     override fun notificationText(): String {
-       return "New image posted."
+        return "New image posted."
     }
 
     override fun equals(other: Any?): Boolean {
