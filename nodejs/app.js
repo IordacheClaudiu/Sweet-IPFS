@@ -131,15 +131,7 @@ async function processResource(cid) {
     var aesCipherCID = addResult[0].hash;
     console.log("Added Encrypted CID: " + aesCipherCID);
 
-    // encInput = await ipfs.cat(aesEncryptedCID);
-    // encString = encInput.toString("utf8");
-    // var decipher = forge.cipher.createDecipher("AES-CBC", aesKey);
-    // decipher.start({ iv: iv });
-    // decipher.update(forge.util.createBuffer(forge.util.createBuffer(encString)));
-    // decipher.finish();
-    // console.log(decipher.output.toString("utf8"));
-
-    // 5. RSA Encrypt
+    // 7. RSA Encrypt
     var publicKey = ipfsImageJSON.peer.publicKey;
     var rsaNode = new NodeRSA();
     var public =
@@ -151,42 +143,18 @@ async function processResource(cid) {
     var rsaCipherText = rsaNode.encrypt(aesKey, "base64");
     console.log("AES encrypted key: " + rsaCipherText);
 
-
-    // 6. Publish new entry
-    var ipnsEntry = { image_analysis_cid: aesCipherCID, image_hash: ipfsImageHash , key_rsa: rsaCipherText };
+    // 8. Publish new entry
+    var ipnsEntry = {
+      image_analysis_cid: aesCipherCID,
+      image_hash: ipfsImageHash,
+      key_rsa: rsaCipherText
+    };
     var peerAddress = ipfsImageJSON.peer.addresses[0];
-    var peerAddressesComps =  peerAddress.split("/");
+    var peerAddressesComps = peerAddress.split("/");
     var topic = peerAddressesComps[peerAddressesComps.length - 1];
     console.log(topic);
     await ipfs.pubsub.publish(topic, Buffer.from(JSON.stringify(ipnsEntry)));
     return "IPFS success";
-    
-    // // 6. Retrive IPNS array of encrypted entries
-    // const ipnsCID = await ipnsResolve();
-    // var ipnsContent = JSON.parse(await ipfs.cat(ipnsCID));
-    // console.log("[Before] IPNS Content: " + ipnsContent + ".");
-    // if (ipnsContent == null || !Array.isArray(ipnsContent)) {
-    //   console.log("!!!!!!! Not Array", ipnsContent);
-    //   ipnsContent = new Array();
-    // }
-
-    
-    // if (ipnsContent.includes(aesCipherCID)) {
-    //   return Error("Image already analysed.");
-    // }
-    // ipnsContent.push(ipnsEntry);
-    // console.log(
-    //   "[After] IPNS Content: " + ipnsContent.length + " - " + ipnsContent + "."
-    // );
-
-    // // 9. Update IPNS array
-    // addResult = await ipfs.add(Buffer.from(JSON.stringify(ipnsContent)));
-    // addedCID = addResult[0].hash;
-    // console.log("Update Array CID: " + addedCID + ".");
-
-    // // 10.Update IPNS
-    // var publishResult = await ipfs.name.publish("/ipfs/" + addedCID);
-    // return publishResult;
   } catch (error) {
     return error;
   }
