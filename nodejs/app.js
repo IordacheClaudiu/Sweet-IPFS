@@ -115,9 +115,9 @@ async function processResource(cid) {
     ipfsImageJSON.file.detection = detection;
 
     // 5. AES Encryption
-    var iv = forge.random.getBytesSync(32);
+    var iv = forge.random.getBytesSync(16);
     var salt = forge.random.getBytesSync(8);  
-    var aesKey = forge.pkcs5.pbkdf2("password", salt, 1000, 32);
+    var aesKey = forge.pkcs5.pbkdf2("password", salt, 1000, 16);
     console.log("AES Key: " + aesKey);
     console.log("Bytes: " + stringToBytes(aesKey).length);
     var cipher = forge.cipher.createCipher("AES-CBC", aesKey);
@@ -135,14 +135,13 @@ async function processResource(cid) {
 
     // 7. RSA Encrypt
     var publicKey = ipfsImageJSON.peer.publicKey;
-    var rsaNode = new NodeRSA();
     var public =
       "-----BEGIN PUBLIC KEY-----\n" +
       publicKey +
       "\n" +
       "-----END PUBLIC KEY-----";
-    rsaNode.importKey(public, "pkcs8-public");
-    var rsaCipherText = rsaNode.encrypt(aesKey, "base64");
+    var pk = forge.pki.publicKeyFromPem(public);
+    var rsaCipherText =  forge.util.encode64(pk.encrypt(aesKey, 'RSA-OAEP'));
     console.log("AES encrypted key: " + rsaCipherText);
 
     // 8. Publish new entry

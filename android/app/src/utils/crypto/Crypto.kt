@@ -38,12 +38,11 @@ class Crypto(private val alias: String) {
         }
     }
 
-    fun decryptRSA(data: String): String {
+    fun decryptRSA(data: String): ByteArray {
         val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE , privateKey)
         val encryptedData = Base64.decode(data , Base64.DEFAULT)
-        val decodedData = cipher.doFinal(encryptedData)
-        return String(decodedData)
+        return  cipher.doFinal(encryptedData)
     }
 
     fun descryptAES(data: String , secretBytes: ByteArray): String {
