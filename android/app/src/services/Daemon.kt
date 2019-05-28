@@ -59,10 +59,10 @@ class Daemon(private val ctx: Context) : AnkoLogger {
             val binder = service as ForegroundService.ForegroundBinder
             val mService = binder.getService()
             mService.setupFinished.subscribe({
-                when(it) {
+                when (it) {
                     true -> onSuccess?.invoke()
                 }
-            },{
+            } , {
                 onError?.invoke(it)
             })
         }
@@ -131,11 +131,11 @@ class Daemon(private val ctx: Context) : AnkoLogger {
         val act = ctx as? Activity ?: return
         info { Build.SUPPORTED_ABIS.joinToString { "," } }
 
-        val type = when(val abi = Build.SUPPORTED_ABIS[0]) {
+        val type = when (val abi = Build.SUPPORTED_ABIS[0]) {
             "arm64-v8a" -> "arm64"
             "x86_64" -> "amd64"
-            "armeabi", "armeabi-v7a" -> "arm"
-            "x86", "386" -> "386"
+            "armeabi" , "armeabi-v7a" -> "arm"
+            "x86" , "386" -> "386"
             else -> throw Exception("${ctx.getString(R.string.daemon_unsupported_arch)}: $abi")
         }
 
@@ -248,7 +248,7 @@ class ForegroundService : Service() , AnkoLogger {
     private lateinit var peer: PeerDTO
     val setupFinished = PublishSubject.create<Boolean>()
     val resourcesObservable = ReplaySubject.create<List<IIpfsResource>>()
-    val loadingPeersObservable= ReplaySubject.create<Boolean>(1)
+    val loadingPeersObservable = ReplaySubject.create<Boolean>(1)
 
     private val username by lazy {
         defaultSharedPreferences.getString(Constants.SHARED_PREF_USERNAME , null)
@@ -267,7 +267,7 @@ class ForegroundService : Service() , AnkoLogger {
     // Location
     private val locationManager by lazy { getSystemService(Context.LOCATION_SERVICE) as LocationManager }
     private val locationProvider: String = LocationManager.GPS_PROVIDER
-    private var locationManagerStarted =  false
+    private var locationManagerStarted = false
     private var lastKnownLocation: Location? = null
     private val TWO_MINUTES: Long = 1000 * 60 * 2
 
@@ -275,7 +275,7 @@ class ForegroundService : Service() , AnkoLogger {
 
         override fun onLocationChanged(location: Location) {
             info { location }
-            if (isBetterLocation(location, lastKnownLocation)) {
+            if (isBetterLocation(location , lastKnownLocation)) {
                 lastKnownLocation = location
                 send(location)
             }
@@ -295,7 +295,7 @@ class ForegroundService : Service() , AnkoLogger {
     }
 
     // Asymetric crypto
-    private val crypto by lazy {Crypto("IPFS_KEYS") }
+    private val crypto by lazy { Crypto("IPFS_KEYS") }
 
     override fun onCreate() = super.onCreate().also {
         setupForegroundNotification()
@@ -332,9 +332,11 @@ class ForegroundService : Service() , AnkoLogger {
     }
 
     fun startTracking() {
-        if (locationManagerStarted) { return }
+        if (locationManagerStarted) {
+            return
+        }
         try {
-            locationManager.requestLocationUpdates(locationProvider, 2000 , 3f , locationListener)
+            locationManager.requestLocationUpdates(locationProvider , 2000 , 3f , locationListener)
             locationManagerStarted = true
             lastKnownLocation = locationManager.getLastKnownLocation(locationProvider)
         } catch (e: SecurityException) {
@@ -406,20 +408,29 @@ class ForegroundService : Service() , AnkoLogger {
             uiThread {
                 if (id.containsKey("Addresses")) {
                     val list = id["Addresses"] as List<String>
-                    peer = PeerDTO(username , device , os , list, crypto.publicKey)
+                    peer = PeerDTO(username , device , os , list , crypto.publicKey)
                     sender = ResourceSender(this@ForegroundService , peer , ipfs)
                 } else {
                     setupFinished.onError(IPFSInvalidNode())
                     error { "Peer doesn't have addresses" }
                 }
                 receiver = ResourceReceiver(ipfs)
-                receiver.subscribeTo(IPFS_PUB_SUB_CHANNEL , {
+                //Public topic
+                receiver.subscribeToPublic(IPFS_PUB_SUB_CHANNEL , {
                     if (it.peer != peer) {
                         resourcesObservable.onNext(listOf(it))
                     }
                     if (showNotification) {
                         showNotification(it)
                     }
+                } , {
+                    error { it }
+                })
+                // Private topic
+                val topic = peer.addresses.first().split("/").last()
+                receiver.subscribeToPrivate(topic , {
+                    info { "PRIVATE received: ${it}" }
+
                 } , {
                     error { it }
                 })
@@ -433,24 +444,24 @@ class ForegroundService : Service() , AnkoLogger {
         val parser = ResourceParser()
         loadingPeersObservable.onNext(true)
         doAsync {
-                val localHashes = ipfs.refs.local()
-                var resources: MutableList<IIpfsResource> = ArrayList()
-                localHashes.forEach {
-                    try {
-                        val bytes = ipfs.cat(it)
-                        val json = String(bytes)
-                        val resource = parser.parseResource(json)
-                        resource?.let { resources.add(resource) }
-                        debug { json }
-                    } catch (ex: Throwable) {
-                        error { ex }
-                    }
-                }
-                uiThread {
-                    resourcesObservable.onNext(resources)
-                    loadingPeersObservable.onNext(false)
+            val localHashes = ipfs.refs.local()
+            var resources: MutableList<IIpfsResource> = ArrayList()
+            localHashes.forEach {
+                try {
+                    val bytes = ipfs.cat(it)
+                    val json = String(bytes)
+                    val resource = parser.parseResource(json)
+                    resource?.let { resources.add(resource) }
+                    debug { json }
+                } catch (ex: Throwable) {
+                    error { ex }
                 }
             }
+            uiThread {
+                resourcesObservable.onNext(resources)
+                loadingPeersObservable.onNext(false)
+            }
+        }
     }
 
     private fun setupForegroundNotification() {
@@ -488,7 +499,7 @@ class ForegroundService : Service() , AnkoLogger {
         }.start()
     }
 
-    private fun isBetterLocation(location: Location, currentBestLocation: Location?): Boolean {
+    private fun isBetterLocation(location: Location , currentBestLocation: Location?): Boolean {
         if (currentBestLocation == null) {
             // A new location is always better than no location
             return true
@@ -497,7 +508,7 @@ class ForegroundService : Service() , AnkoLogger {
         // Check whether the new location fix is newer or older
         val timeDelta: Long = location.time - currentBestLocation.time
         val isSignificantlyNewer: Boolean = timeDelta > TWO_MINUTES
-        val isSignificantlyOlder:Boolean = timeDelta < -TWO_MINUTES
+        val isSignificantlyOlder: Boolean = timeDelta < - TWO_MINUTES
 
         when {
             // If it's been more than two minutes since the current location, use the new location
@@ -520,8 +531,8 @@ class ForegroundService : Service() , AnkoLogger {
         // Determine location quality using a combination of timeliness and accuracy
         return when {
             isMoreAccurate -> true
-            isNewer && !isLessAccurate -> true
-            isNewer && !isSignificantlyLessAccurate && isFromSameProvider -> true
+            isNewer && ! isLessAccurate -> true
+            isNewer && ! isSignificantlyLessAccurate && isFromSameProvider -> true
             else -> false
         }
     }

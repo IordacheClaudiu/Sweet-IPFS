@@ -2,6 +2,7 @@ package models
 
 import android.location.Location
 import android.util.Size
+import com.google.gson.annotations.SerializedName
 import io.ipfs.multihash.Multihash
 import java.io.Serializable
 import java.util.*
@@ -130,4 +131,17 @@ data class RepositoryDTO(val peer: PeerDTO) {
     fun add(multihash: Multihash) {
         multiHashes.add(multihash)
     }
+}
+
+class SecureEntry {
+
+    @SerializedName("image_analysis_cid")
+    var imageAnalysisCID: String? = null
+
+    @SerializedName("image_hash")
+    var imageCID: String? = null
+
+    @SerializedName("key_rsa")
+    var rsaKey: String? = null
+
 }

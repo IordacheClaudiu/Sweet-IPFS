@@ -3,7 +3,9 @@ package utils
 import io.ipfs.api.IPFS
 import io.ipfs.multihash.Multihash
 import models.IIpfsResource
+import models.SecureEntry
 import org.jetbrains.anko.*
+import utils.crypto.Crypto
 import java.io.IOException
 import java.util.concurrent.Future
 
@@ -11,7 +13,7 @@ class ResourceReceiver(val ipfs: IPFS) : AnkoLogger {
 
     private val parser = ResourceParser()
 
-    fun subscribeTo(channel: String , onSuccess: (IIpfsResource) -> Unit , onError: (IOException) -> Unit): Future<Unit> {
+    fun subscribeToPublic(channel: String , onSuccess: (IIpfsResource) -> Unit , onError: (IOException) -> Unit): Future<Unit> {
       return doAsync {
             try {
                 val stream = ipfs.pubsub.sub(channel)
@@ -36,4 +38,39 @@ class ResourceReceiver(val ipfs: IPFS) : AnkoLogger {
             }
         }
     }
+
+
+    fun subscribeToPrivate(channel: String , onSuccess: (SecureEntry) -> Unit , onError: (IOException) -> Unit): Future<Unit> {
+        return doAsync {
+            try {
+                val stream = ipfs.pubsub.sub(channel)
+                stream.forEach {
+                    val dataRaw = it[Constants.IPFS_PUB_SUB_DATA] as? String
+                    val data = dataRaw?.decode()
+                    info { data }
+                    data.notNull {
+                        try {
+                            val secureEntry = parser.parseSecureEntry(it)
+                            secureEntry?.let {
+                                val crypto = Crypto("IPFS_KEYS")
+                                val aesKey = crypto.decryptRSA(secureEntry.rsaKey!!)
+                                val multihash = Multihash.fromBase58(secureEntry.imageAnalysisCID)
+
+                                val bytes = ipfs.cat(multihash)
+                                val json = crypto.descryptAES(String(bytes), aesKey.toByteArray())
+                                info { json }
+                                uiThread { onSuccess(secureEntry) }
+                            }
+                        } catch (ex: Throwable) {
+                            error { ex }
+                        }
+                    }
+                }
+            } catch (ex: IOException) {
+                uiThread { onError(ex) }
+            }
+        }
+    }
+
+
 }

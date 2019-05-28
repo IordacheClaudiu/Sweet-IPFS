@@ -5,8 +5,8 @@ const bl = require("bl");
 
 // AWS Setup
 const AWS = require("aws-sdk");
-// const IAM_USER_KEY = "AKIASWQVFICH4DWOGVG5";
-// const IAM_USER_SECRET = "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";
+const IAM_USER_KEY = "*";
+const IAM_USER_SECRET = "*";
 const rekognition = new AWS.Rekognition({
   region: "us-west-2",
   accessKeyId: IAM_USER_KEY,
@@ -115,12 +115,11 @@ async function processResource(cid) {
     ipfsImageJSON.file.detection = detection;
 
     // 5. AES Encryption
-    var iv = forge.random.getBytesSync(16);
-    var salt = forge.random.getBytesSync(16);
-    // var aesKey = forge.pkcs5.pbkdf2("pasfdsfdssword", salt, 10000, 16);
-    var aesKey = forge.random.getBytesSync(16);
+    var iv = forge.random.getBytesSync(32);
+    var salt = forge.random.getBytesSync(8);  
+    var aesKey = forge.pkcs5.pbkdf2("password", salt, 1000, 32);
     console.log("AES Key: " + aesKey);
-    console.log("Bytes: " + toUTF8Array(aesKey).length);
+    console.log("Bytes: " + stringToBytes(aesKey).length);
     var cipher = forge.cipher.createCipher("AES-CBC", aesKey);
     cipher.start({ iv: iv });
 
@@ -163,32 +162,23 @@ async function processResource(cid) {
   }
 }
 
-function toUTF8Array(str) {
-  var utf8 = [];
-  for (var i=0; i < str.length; i++) {
-      var charcode = str.charCodeAt(i);
-      if (charcode < 0x80) utf8.push(charcode);
-      else if (charcode < 0x800) {
-          utf8.push(0xc0 | (charcode >> 6), 
-                    0x80 | (charcode & 0x3f));
-      }
-      else if (charcode < 0xd800 || charcode >= 0xe000) {
-          utf8.push(0xe0 | (charcode >> 12), 
-                    0x80 | ((charcode>>6) & 0x3f), 
-                    0x80 | (charcode & 0x3f));
-      }
-      // surrogate pair
-      else {
-          i++;
-          charcode = ((charcode&0x3ff)<<10)|(str.charCodeAt(i)&0x3ff)
-          utf8.push(0xf0 | (charcode >>18), 
-                    0x80 | ((charcode>>12) & 0x3f), 
-                    0x80 | ((charcode>>6) & 0x3f), 
-                    0x80 | (charcode & 0x3f));
-      }
+function stringToBytes(str) {
+  var ch, st, re = [];
+  for (var i = 0; i < str.length; i++ ) {
+	ch = str.charCodeAt(i);  // get char 
+	st = [];                 // set up "stack"
+	do {
+	  st.push( ch & 0xFF );  // push byte to stack
+	  ch = ch >> 8;          // shift value down by 1 byte
+	}  
+	while ( ch );
+	// add stack contents to result
+	// done because chars have "wrong" endianness
+	re = re.concat( st.reverse() );
   }
-  return utf8;
-}
+  // return an array of bytes
+  return re;
+}    
 
 function main() {
   processResource("QmUg8HT2ZHDU6wzsznVoecfQTjUEEQJAwMgDAbgu2kGKs3")

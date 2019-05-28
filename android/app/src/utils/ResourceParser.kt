@@ -34,4 +34,8 @@ class ResourceParser {
         }
         return null
     }
+
+    fun parseSecureEntry(string: String): SecureEntry? {
+        return gson.fromJson<SecureEntry>(string , SecureEntry::class.java)
+    }
 }
