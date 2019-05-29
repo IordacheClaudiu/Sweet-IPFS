@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 // IPFS Setup
 const ipfsClient = require("ipfs-http-client");
 const ipfs = ipfsClient("/ip4/127.0.0.1/tcp/5001");
@@ -5,12 +7,10 @@ const bl = require("bl");
 
 // AWS Setup
 const AWS = require("aws-sdk");
-const IAM_USER_KEY = "*";
-const IAM_USER_SECRET = "*";
 const rekognition = new AWS.Rekognition({
   region: "us-west-2",
-  accessKeyId: IAM_USER_KEY,
-  secretAccessKey: IAM_USER_SECRET
+  accessKeyId: process.env.IAM_USER_KEY,
+  secretAccessKey: process.env.IAM_USER_SECRET
 });
 const fs = require("fs");
 
@@ -116,20 +116,21 @@ async function processResource(cid) {
 
     // 5. AES Encryption
     var iv = forge.random.getBytesSync(16);
+    var ivEncoded = forge.util.encode64(iv);
     var salt = forge.random.getBytesSync(8);  
     var aesKey = forge.pkcs5.pbkdf2("password", salt, 1000, 16);
     console.log("AES Key: " + aesKey);
-    console.log("Bytes: " + stringToBytes(aesKey).length);
+    // console.log("Bytes: " + stringToBytes(aesKey));
     var cipher = forge.cipher.createCipher("AES-CBC", aesKey);
     cipher.start({ iv: iv });
-
     var input = forge.util.createBuffer(JSON.stringify(ipfsImageJSON), "utf8");
     cipher.update(input);
     cipher.finish();
-    var aesCipherText = cipher.output.getBytes();
+    var aesEncrypted = cipher.output.getBytes();
+    var aesEncryptedEncoded = forge.util.encode64(aesEncrypted);
 
     // 6. Add AES encrypted to IPFS
-    var addResult = await ipfs.add(Buffer.from(aesCipherText));
+    var addResult = await ipfs.add(Buffer.from(aesEncryptedEncoded));
     var aesCipherCID = addResult[0].hash;
     console.log("Added Encrypted CID: " + aesCipherCID);
 
@@ -140,15 +141,16 @@ async function processResource(cid) {
       publicKey +
       "\n" +
       "-----END PUBLIC KEY-----";
-    var pk = forge.pki.publicKeyFromPem(public);
-    var rsaCipherText =  forge.util.encode64(pk.encrypt(aesKey, 'RSA-OAEP'));
-    console.log("AES encrypted key: " + rsaCipherText);
+    var rsaPublicKey = forge.pki.publicKeyFromPem(public);
+    var rsaEncrypted = rsaPublicKey.encrypt(aesKey, 'RSA-OAEP');
+    var rsaEncryptedEncoded =  forge.util.encode64(rsaEncrypted);
+    
 
     // 8. Publish new entry
     var ipnsEntry = {
       image_analysis_cid: aesCipherCID,
-      image_hash: ipfsImageHash,
-      key_rsa: rsaCipherText
+      aes_key_encrypted: rsaEncryptedEncoded,
+      aes_iv: ivEncoded
     };
     var peerAddress = ipfsImageJSON.peer.addresses[0];
     var peerAddressesComps = peerAddress.split("/");

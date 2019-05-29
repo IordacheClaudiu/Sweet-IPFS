@@ -41,18 +41,19 @@ class Crypto(private val alias: String) {
     fun decryptRSA(data: String): ByteArray {
         val cipher = Cipher.getInstance(RSA_TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE , privateKey)
-        val encryptedData = Base64.decode(data , Base64.DEFAULT)
-        return  cipher.doFinal(encryptedData)
+        val decodedEncryptedData = Base64.decode(data , Base64.DEFAULT)
+        return cipher.doFinal(decodedEncryptedData)
     }
 
-    fun descryptAES(data: String , secretBytes: ByteArray): String {
+    fun decryptAES(data: String , secretBytes: ByteArray, iv: String): String {
         val secretKey = SecretKeySpec(secretBytes , 0 , secretBytes.size , "AES")
         val raw = secretKey.encoded
-        val skeySpec = SecretKeySpec(raw , "AES")
+        val aesKeySpec = SecretKeySpec(raw , "AES")
         val cipher = Cipher.getInstance(AES_TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE , skeySpec , IvParameterSpec(ByteArray(16)))
-//        val original = cipher.doFinal(data.toByteArray(Charsets.UTF_8))
-        val original = cipher.doFinal(Base64.decode(data , Base64.DEFAULT))
+        val decodedEncryptedData = Base64.decode(data, Base64.DEFAULT)
+        var decodedIV = Base64.decode(iv, Base64.DEFAULT)
+        cipher.init(Cipher.DECRYPT_MODE , aesKeySpec , IvParameterSpec(decodedIV))
+        val original = cipher.doFinal(decodedEncryptedData)
         return String(original , Charset.forName("UTF-8"))
     }
 

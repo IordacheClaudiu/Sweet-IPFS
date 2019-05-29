@@ -138,10 +138,11 @@ class SecureEntry {
     @SerializedName("image_analysis_cid")
     var imageAnalysisCID: String? = null
 
-    @SerializedName("image_hash")
-    var imageCID: String? = null
 
-    @SerializedName("key_rsa")
-    var rsaKey: String? = null
+    @SerializedName("aes_key_encrypted")
+    var aesKeyEncrypted: String? = null
+
+    @SerializedName("aes_iv")
+    var aesIV: String? = null
 
 }

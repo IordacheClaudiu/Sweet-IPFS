@@ -53,10 +53,10 @@ class ResourceReceiver(val ipfs: IPFS) : AnkoLogger {
                             val secureEntry = parser.parseSecureEntry(it)
                             secureEntry?.let {
                                 val crypto = Crypto("IPFS_KEYS")
-                                val aesKey = crypto.decryptRSA(secureEntry.rsaKey!!)
-                                val multihash = Multihash.fromBase58(secureEntry.imageAnalysisCID)
-                                val bytes = ipfs.cat(multihash)
-                                val json = crypto.descryptAES(String(bytes), aesKey)
+                                val aesKey = crypto.decryptRSA(it.aesKeyEncrypted!!)
+                                val multiHash = Multihash.fromBase58(it.imageAnalysisCID)
+                                val bytes = ipfs.cat(multiHash)
+                                val json = crypto.decryptAES(String(bytes), aesKey, it.aesIV!!)
                                 info { json }
                                 uiThread { onSuccess(secureEntry) }
                             }

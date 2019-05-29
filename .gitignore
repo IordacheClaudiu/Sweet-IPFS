@@ -307,3 +307,4 @@ android/app/assets/arm
 android/app/assets/arm64
 nodejs/node_modules
 credentials
+.env
