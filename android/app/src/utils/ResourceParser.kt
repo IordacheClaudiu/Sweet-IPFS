@@ -38,4 +38,8 @@ class ResourceParser {
     fun parseSecureEntry(string: String): SecureEntry? {
         return gson.fromJson<SecureEntry>(string , SecureEntry::class.java)
     }
+
+    fun parseImageDetectionResource(string: String): IPFSImageDetectionResource? {
+        return gson.fromJson<IPFSImageDetectionResource>(string , IPFSImageDetectionResource::class.java)
+    }
 }

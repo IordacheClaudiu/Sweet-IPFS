@@ -119,8 +119,7 @@ async function processResource(cid) {
     var ivEncoded = forge.util.encode64(iv);
     var salt = forge.random.getBytesSync(8);  
     var aesKey = forge.pkcs5.pbkdf2("password", salt, 1000, 16);
-    console.log("AES Key: " + aesKey);
-    // console.log("Bytes: " + stringToBytes(aesKey));
+    console.log("Generated AES Key: " + aesKey);
     var cipher = forge.cipher.createCipher("AES-CBC", aesKey);
     cipher.start({ iv: iv });
     var input = forge.util.createBuffer(JSON.stringify(ipfsImageJSON), "utf8");
@@ -162,24 +161,6 @@ async function processResource(cid) {
     return error;
   }
 }
-
-function stringToBytes(str) {
-  var ch, st, re = [];
-  for (var i = 0; i < str.length; i++ ) {
-	ch = str.charCodeAt(i);  // get char 
-	st = [];                 // set up "stack"
-	do {
-	  st.push( ch & 0xFF );  // push byte to stack
-	  ch = ch >> 8;          // shift value down by 1 byte
-	}  
-	while ( ch );
-	// add stack contents to result
-	// done because chars have "wrong" endianness
-	re = re.concat( st.reverse() );
-  }
-  // return an array of bytes
-  return re;
-}    
 
 function main() {
   processResource("QmUg8HT2ZHDU6wzsznVoecfQTjUEEQJAwMgDAbgu2kGKs3")

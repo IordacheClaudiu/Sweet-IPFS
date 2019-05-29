@@ -19,11 +19,11 @@ interface IIpfsResource {
     fun notificationText(): String
 }
 
-data class PeerDTO(val username: String ,
-                   val device: String ,
-                   val os: String ,
-                   val addresses: List<String>,
-                   val publicKey: String?) : Serializable {
+class PeerDTO(val username: String ,
+              val device: String ,
+              val os: String ,
+              val addresses: List<String> ,
+              val publicKey: String?) : Serializable {
 
     override fun equals(other: Any?): Boolean {
         if (other !is PeerDTO) return false
@@ -34,7 +34,7 @@ data class PeerDTO(val username: String ,
     }
 }
 
-data class FileDTO(val filename: String , val mimeType: String? , val hash: String) {
+open class FileDTO(val filename: String , val mimeType: String? , val hash: String) {
 
     override fun equals(other: Any?): Boolean {
         if (other !is FileDTO) return false
@@ -44,10 +44,11 @@ data class FileDTO(val filename: String , val mimeType: String? , val hash: Stri
     }
 }
 
-data class IpfsTextResource(override val id: UUID ,
-                            override val peer: PeerDTO ,
-                            override val timestamp: Date ,
-                            val text: String) : IIpfsResource {
+
+class IpfsTextResource(override val id: UUID ,
+                       override val peer: PeerDTO ,
+                       override val timestamp: Date ,
+                       val text: String) : IIpfsResource {
 
     override val type = IpfsResourceType.TEXT
 
@@ -65,10 +66,10 @@ data class IpfsTextResource(override val id: UUID ,
 
 }
 
-data class IpfsLocationResource(override val id: UUID ,
-                                override val peer: PeerDTO ,
-                                override val timestamp: Date ,
-                                val location: Location) : IIpfsResource {
+class IpfsLocationResource(override val id: UUID ,
+                           override val peer: PeerDTO ,
+                           override val timestamp: Date ,
+                           val location: Location) : IIpfsResource {
     override val type = IpfsResourceType.LOCATION
 
     override fun notificationText(): String {
@@ -85,11 +86,11 @@ data class IpfsLocationResource(override val id: UUID ,
 
 }
 
-data class IpfsImageResource(override val id: UUID ,
-                             override val peer: PeerDTO ,
-                             override val timestamp: Date ,
-                             val file: FileDTO ,
-                             val size: Size?) : IIpfsResource {
+class IpfsImageResource(override val id: UUID ,
+                        override val peer: PeerDTO ,
+                        override val timestamp: Date ,
+                        val file: FileDTO ,
+                        val size: Size?) : IIpfsResource {
     override val type = IpfsResourceType.IMAGE
 
     override fun notificationText(): String {
@@ -105,10 +106,33 @@ data class IpfsImageResource(override val id: UUID ,
     }
 }
 
-data class IpfsVideoResource(override val id: UUID ,
-                             override val peer: PeerDTO ,
-                             override val timestamp: Date ,
-                             val file: FileDTO) : IIpfsResource {
+
+class LabelDTO(@SerializedName("Name") val name: String ,
+               @SerializedName("Confidence") val confidence: Double)
+
+class DetectionDTO(@SerializedName("Labels") val labels: List<LabelDTO>)
+
+class FileDetectionDTO(filename: String ,
+                       mimeType: String? ,
+                       hash: String ,
+                       @SerializedName("detection") val detection: DetectionDTO) : FileDTO(filename , mimeType , hash)
+
+class IPFSImageDetectionResource(override val id: UUID ,
+                                 override val peer: PeerDTO ,
+                                 override val timestamp: Date ,
+                                 val file: FileDetectionDTO? ,
+                                 val size: Size?) : IIpfsResource {
+    override val type = IpfsResourceType.IMAGE
+
+    override fun notificationText(): String {
+        return "New image analysis available."
+    }
+}
+
+class IpfsVideoResource(override val id: UUID ,
+                        override val peer: PeerDTO ,
+                        override val timestamp: Date ,
+                        val file: FileDTO) : IIpfsResource {
     override val type = IpfsResourceType.VIDEO
 
     override fun notificationText(): String {
@@ -124,7 +148,7 @@ data class IpfsVideoResource(override val id: UUID ,
     }
 }
 
-data class RepositoryDTO(val peer: PeerDTO) {
+class RepositoryDTO(val peer: PeerDTO) {
 
     var multiHashes: MutableSet<Multihash> = mutableSetOf()
 

@@ -3,7 +3,7 @@ package utils
 import io.ipfs.api.IPFS
 import io.ipfs.multihash.Multihash
 import models.IIpfsResource
-import models.SecureEntry
+import models.IPFSImageDetectionResource
 import org.jetbrains.anko.*
 import utils.crypto.Crypto
 import java.io.IOException
@@ -14,7 +14,7 @@ class ResourceReceiver(val ipfs: IPFS) : AnkoLogger {
     private val parser = ResourceParser()
 
     fun subscribeToPublic(channel: String , onSuccess: (IIpfsResource) -> Unit , onError: (IOException) -> Unit): Future<Unit> {
-      return doAsync {
+        return doAsync {
             try {
                 val stream = ipfs.pubsub.sub(channel)
                 stream.forEach {
@@ -40,7 +40,7 @@ class ResourceReceiver(val ipfs: IPFS) : AnkoLogger {
     }
 
 
-    fun subscribeToPrivate(channel: String , onSuccess: (SecureEntry) -> Unit , onError: (IOException) -> Unit): Future<Unit> {
+    fun subscribeToPrivate(channel: String , onSuccess: (IPFSImageDetectionResource) -> Unit , onError: (IOException) -> Unit): Future<Unit> {
         return doAsync {
             try {
                 val stream = ipfs.pubsub.sub(channel)
@@ -53,12 +53,12 @@ class ResourceReceiver(val ipfs: IPFS) : AnkoLogger {
                             val secureEntry = parser.parseSecureEntry(it)
                             secureEntry?.let {
                                 val crypto = Crypto("IPFS_KEYS")
-                                val aesKey = crypto.decryptRSA(it.aesKeyEncrypted!!)
+                                val aesKey = crypto.decryptRSA(it.aesKeyEncrypted !!)
                                 val multiHash = Multihash.fromBase58(it.imageAnalysisCID)
                                 val bytes = ipfs.cat(multiHash)
-                                val json = crypto.decryptAES(String(bytes), aesKey, it.aesIV!!)
-                                info { json }
-                                uiThread { onSuccess(secureEntry) }
+                                val json = crypto.decryptAES(String(bytes) , aesKey , it.aesIV !!)
+                                val resource = parser.parseImageDetectionResource(json)
+                                resource?.let { uiThread { onSuccess(resource) } }
                             }
                         } catch (ex: Throwable) {
                             error { ex }
