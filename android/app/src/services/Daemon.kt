@@ -29,6 +29,7 @@ import io.ipfs.api.IPFS
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.ReplaySubject
 import models.IIpfsResource
+import models.IPFSImageDetectionResource
 import models.PeerDTO
 import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
@@ -247,7 +248,8 @@ class ForegroundService : Service() , AnkoLogger {
     private lateinit var sender: ResourceSender
     private lateinit var peer: PeerDTO
     val setupFinished = PublishSubject.create<Boolean>()
-    val resourcesObservable = ReplaySubject.create<List<IIpfsResource>>()
+    val publicResourcesObservable = ReplaySubject.create<List<IIpfsResource>>()
+    val privateResourceObservable = ReplaySubject.create<IPFSImageDetectionResource>()
     val loadingPeersObservable = ReplaySubject.create<Boolean>(1)
 
     private val username by lazy {
@@ -418,7 +420,7 @@ class ForegroundService : Service() , AnkoLogger {
                 //Public topic
                 receiver.subscribeToPublic(IPFS_PUB_SUB_CHANNEL , {
                     if (it.peer != peer) {
-                        resourcesObservable.onNext(listOf(it))
+                        publicResourcesObservable.onNext(listOf(it))
                     }
                     if (showNotification) {
                         showNotification(it)
@@ -429,8 +431,11 @@ class ForegroundService : Service() , AnkoLogger {
                 // Private topic
                 val topic = peer.addresses.first().split("/").last()
                 receiver.subscribeToPrivate(topic , {
-                    info { "PRIVATE received: ${it}" }
+                    if (showNotification) {
 
+                    } else {
+                        privateResourceObservable.onNext(it)
+                    }
                 } , {
                     error { it }
                 })
@@ -458,7 +463,7 @@ class ForegroundService : Service() , AnkoLogger {
                 }
             }
             uiThread {
-                resourcesObservable.onNext(resources)
+                publicResourcesObservable.onNext(resources)
                 loadingPeersObservable.onNext(false)
             }
         }

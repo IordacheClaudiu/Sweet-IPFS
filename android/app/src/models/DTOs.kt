@@ -1,6 +1,7 @@
 package models
 
 import android.location.Location
+import android.os.Parcelable
 import android.util.Size
 import com.google.gson.annotations.SerializedName
 import io.ipfs.multihash.Multihash
@@ -105,7 +106,6 @@ class IpfsImageResource(override val id: UUID ,
                 this.file == other.file
     }
 }
-
 
 class LabelDTO(@SerializedName("Name") val name: String ,
                @SerializedName("Confidence") val confidence: Double)

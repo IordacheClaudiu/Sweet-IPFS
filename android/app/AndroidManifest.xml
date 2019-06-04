@@ -26,6 +26,7 @@
             android:exported="false"
             android:stopWithTask="false" />
 
+        <!-- MainActivity -->
         <activity android:name="activities.MainActivity"
             android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden">
@@ -36,15 +37,18 @@
             </intent-filter>
         </activity>
 
+        <!-- TabsActivity  -->
         <activity android:name="activities.TabsActivity"
             android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden"
             />
 
+        <!-- ResourcesActivity -->
         <activity android:name="activities.ResourcesActivity"
             android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden"/>
 
+        <!-- ShareActivity -->
         <activity android:name="activities.ShareActivity"
             android:screenOrientation="portrait"
             android:configChanges="screenLayout|screenSize|orientation">
@@ -57,6 +61,13 @@
             </intent-filter>
         </activity>
 
+        <!-- ImageRekognitionActivity  -->
+        <activity android:name="activities.ImageRekognitionActivity">
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden"
+        </activity>
+
+        <!-- BrowseActivity -->
         <activity android:name="activities.BrowseActivity"
             android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden">

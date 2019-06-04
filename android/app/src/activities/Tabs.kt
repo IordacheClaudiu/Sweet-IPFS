@@ -23,6 +23,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.PopupMenu
+import com.google.gson.Gson
 import com.tbruyelle.rxpermissions2.RxPermissions
 import fragments.FeedFragment
 import fragments.PeersFragment
@@ -122,12 +123,16 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                     }
                 }
 
-                it.resourcesObservable?.observeOn(AndroidSchedulers.mainThread()).subscribe {
+                it.publicResourcesObservable?.observeOn(AndroidSchedulers.mainThread()).subscribe {
                     val position = viewpager_main.currentItem
                     val fragment = tabsAdapter.registeredFragment(position)
                     if (fragment is FeedFragment) {
                         fragment.add(it)
                     }
+                }
+                it.privateResourceObservable?.observeOn(AndroidSchedulers.mainThread()).subscribe {
+                    val analysisJSON = Gson().toJson(it)
+                    startActivity(ImageRekognitionIntent(analysisJSON))
                 }
             }
 
