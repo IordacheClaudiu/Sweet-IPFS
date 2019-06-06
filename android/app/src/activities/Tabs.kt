@@ -30,12 +30,10 @@ import fragments.PeersFragment
 import io.ipfs.api.Peer
 import io.ipfs.multiaddr.MultiAddress
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_tabbar.*
 import kotlinx.android.synthetic.main.toolbar_main.*
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.info
-import org.jetbrains.anko.uiThread
+import org.jetbrains.anko.*
 import ro.uaic.info.ipfs.R
 import services.ForegroundService
 import services.ipfs
@@ -100,17 +98,20 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
     private val READ_DOCUMENT_REQUEST_CODE = 101
     private val IMAGE_CAPTURE_REQUEST_CODE = 102
 
-    private val notImplemented = { AlertDialog.Builder(this).setMessage("This feature is not yet implemented. Sorry").show(); true }
-
     private var mService: ForegroundService? = null
     private var mBound: Boolean = false
+    private var loadingPeersDisposable: Disposable? = null
+    private var publicResourcesObservable: Disposable? = null
+    private var privateResourceObservable: Disposable? = null
+
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName , service: IBinder) {
             // We've bound to LocalService, cast the IBinder and get ForegroundService instance
             val binder = service as ForegroundService.ForegroundBinder
             mService = binder.getService()
             mService?.let {
-                it.loadingPeersObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
+                loadingPeersDisposable?.dispose()
+                loadingPeersDisposable = it.loadingPeersObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
                     when (it) {
                         true -> {
                             progressBar.visibility = View.VISIBLE
@@ -122,17 +123,25 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                         }
                     }
                 }
-
-                it.publicResourcesObservable?.observeOn(AndroidSchedulers.mainThread()).subscribe {
+                publicResourcesObservable?.dispose()
+                publicResourcesObservable = it.publicResourcesObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
                     val position = viewpager_main.currentItem
                     val fragment = tabsAdapter.registeredFragment(position)
                     if (fragment is FeedFragment) {
                         fragment.add(it)
                     }
                 }
-                it.privateResourceObservable?.observeOn(AndroidSchedulers.mainThread()).subscribe {
+                privateResourceObservable?.dispose()
+                privateResourceObservable = it.privateResourceObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
                     val analysisJSON = Gson().toJson(it)
-                    startActivity(ImageRekognitionIntent(analysisJSON))
+                    alert("Would you like to see more details?" ,
+                            "New analysis available") {
+                        yesButton {
+                            startActivity(ImageRekognitionIntent(analysisJSON))
+                        }
+                        noButton {}
+                    }.show()
+
                 }
             }
 
@@ -156,7 +165,7 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
+        menuInflater.inflate(R.menu.menu_main , menu)
         return true
     }
 
@@ -210,7 +219,7 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
 
                     addSubMenu(getString(R.string.menu_identity)).apply {
                         add(getString(R.string.menu_identity_peerid)).setOnMenuItemClickListener {
-                            val id = this@TabsActivity !!.ipfsDaemon.config.getAsJsonObject("Identity").getAsJsonPrimitive("PeerID").asString
+                            val id = this@TabsActivity.ipfsDaemon.config.getAsJsonObject("Identity").getAsJsonPrimitive("PeerID").asString
                             AlertDialog.Builder(this@TabsActivity).apply {
                                 setTitle(getString(R.string.title_peerid))
                                 setMessage(id)
@@ -222,7 +231,7 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                             }; true
                         }
                         add(getString(R.string.menu_identity_privatekey)).setOnMenuItemClickListener {
-                            val key = this@TabsActivity !!.ipfsDaemon.config.getAsJsonObject("Identity").getAsJsonPrimitive("PrivKey").asString
+                            val key = this@TabsActivity.ipfsDaemon.config.getAsJsonObject("Identity").getAsJsonPrimitive("PrivKey").asString
                             AlertDialog.Builder(this@TabsActivity).apply {
                                 setTitle(getString(R.string.title_privatekey))
                                 setMessage(key)
@@ -248,7 +257,7 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                             }
                             info { "Swarm Peers success." }
                             uiThread {
-                               AlertDialog.Builder(this@TabsActivity).apply {
+                                AlertDialog.Builder(this@TabsActivity).apply {
                                     setTitle(getString(R.string.menu_peers))
                                     setMessage(representation)
                                     setNeutralButton(getString(R.string.close)) { _ , _ -> }
@@ -260,7 +269,7 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                     add(getString(R.string.menu_others)).setOnMenuItemClickListener {
                         doAsync({} , {
                             ipfs.version()
-                            val addresses = this@TabsActivity !!.ipfsDaemon.config.getAsJsonObject("Addresses")
+                            val addresses = this@TabsActivity.ipfsDaemon.config.getAsJsonObject("Addresses")
                             AlertDialog.Builder(this@TabsActivity).apply {
                                 setTitle(getString(R.string.title_others))
                                 setMessage("""
@@ -417,7 +426,6 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
 
     override fun onStop() = super.onStop().also {
         unbindService(connection)
-        mBound = false
     }
 
     override fun onActivityResult(req: Int , res: Int , rdata: Intent?) {

@@ -96,6 +96,7 @@ function processImage(imageData) {
 async function processResource(cid) {
   try {
     // 1. Load resource json
+    console.log("[IPFS] Resource CID: " + cid);
     const userResource = await ipfs.cat(cid);
     if (!isImageResource(userResource)) {
       return "[IPFS] Invalid image resource";

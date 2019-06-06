@@ -249,7 +249,7 @@ class ForegroundService : Service() , AnkoLogger {
     private lateinit var peer: PeerDTO
     val setupFinished = PublishSubject.create<Boolean>()
     val publicResourcesObservable = ReplaySubject.create<List<IIpfsResource>>()
-    val privateResourceObservable = ReplaySubject.create<IPFSImageDetectionResource>()
+    val privateResourceObservable = PublishSubject.create<IPFSImageDetectionResource>()
     val loadingPeersObservable = ReplaySubject.create<Boolean>(1)
 
     private val username by lazy {
@@ -432,7 +432,7 @@ class ForegroundService : Service() , AnkoLogger {
                 val topic = peer.addresses.first().split("/").last()
                 receiver.subscribeToPrivate(topic , {
                     if (showNotification) {
-
+                        showNotification(it)
                     } else {
                         privateResourceObservable.onNext(it)
                     }

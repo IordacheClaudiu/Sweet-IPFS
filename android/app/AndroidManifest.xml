@@ -62,9 +62,9 @@
         </activity>
 
         <!-- ImageRekognitionActivity  -->
-        <activity android:name="activities.ImageRekognitionActivity">
+        <activity android:name="activities.ImageRekognitionActivity"
             android:screenOrientation="portrait"
-            android:configChanges="orientation|keyboardHidden"
+            android:configChanges="orientation|keyboardHidden">
         </activity>
 
         <!-- BrowseActivity -->
