@@ -110,7 +110,6 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
             val binder = service as ForegroundService.ForegroundBinder
             mService = binder.getService()
             mService?.let {
-                loadingPeersDisposable?.dispose()
                 loadingPeersDisposable = it.loadingPeersObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
                     when (it) {
                         true -> {
@@ -123,7 +122,6 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                         }
                     }
                 }
-                publicResourcesObservable?.dispose()
                 publicResourcesObservable = it.publicResourcesObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
                     val position = viewpager_main.currentItem
                     val fragment = tabsAdapter.registeredFragment(position)
@@ -131,7 +129,6 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
                         fragment.add(it)
                     }
                 }
-                privateResourceObservable?.dispose()
                 privateResourceObservable = it.privateResourceObservable.observeOn(AndroidSchedulers.mainThread()).subscribe {
                     val analysisJSON = Gson().toJson(it)
                     alert("Would you like to see more details?" ,
@@ -426,6 +423,9 @@ class TabsActivity : AppCompatActivity() , AnkoLogger , FeedFragment.FeedFragmen
 
     override fun onStop() = super.onStop().also {
         unbindService(connection)
+        loadingPeersDisposable?.dispose()
+        privateResourceObservable?.dispose()
+        publicResourcesObservable?.dispose()
     }
 
     override fun onActivityResult(req: Int , res: Int , rdata: Intent?) {

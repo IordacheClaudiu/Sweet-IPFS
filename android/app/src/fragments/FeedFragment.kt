@@ -73,22 +73,26 @@ class FeedFragment : Fragment() , AnkoLogger {
     }
 
     fun add(resources: List<IIpfsResource>) {
+        val oldCount = adapter.itemCount
         adapter.addAll(resources)
-        updateLayoutManager()
+        val newCount = adapter.itemCount
+        if (oldCount != newCount) { updateLayoutManager() }
     }
 
     fun add(resource: IIpfsResource) {
+        val oldCount = adapter.itemCount
         adapter.add(resource)
         updateLayoutManager()
+        val newCount = adapter.itemCount
+        if (oldCount != newCount) { updateLayoutManager() }
     }
 
     private fun updateLayoutManager() {
-        val layoutManager = recyclerView.layoutManager as LinearLayoutManager
-        val visiblePosition = layoutManager.findFirstVisibleItemPosition()
+        val visiblePosition = linearLayoutManager.findFirstVisibleItemPosition()
         if (visiblePosition > 0) {
             snackBar.setAction(R.string.feed_new_items_refresh) {
                 snackBar.dismiss()
-                layoutManager.smoothScrollToPosition(recyclerView , RecyclerView.State() , 0)
+                linearLayoutManager.smoothScrollToPosition(recyclerView , RecyclerView.State() , 0)
             }
             snackBar.show()
         }
