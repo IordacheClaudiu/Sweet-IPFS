@@ -166,7 +166,7 @@ async function processResource(cid) {
 }
 
 function main() {
-  const topic = "calamities";
+  const topic = "social";
   ipfs.pubsub.subscribe(
     topic,
     msg => {

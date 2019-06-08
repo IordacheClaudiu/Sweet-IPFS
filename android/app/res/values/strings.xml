@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">IPFS Calamities</string>
+    <string name="app_name" translatable="false">IPFS Social</string>
     <string name="username">Username</string>
     <string name="button_submit">Submit</string>
     <string name="button_run_daemon">Start Daemon</string>
